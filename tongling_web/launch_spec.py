@@ -1,0 +1,48 @@
+"""Claude 启动参数准备（Web 终端共用）。"""
+
+from __future__ import annotations
+
+import os
+from typing import Any, Dict, Optional, Tuple
+
+
+def prepare_claude_spec(body: Dict[str, Any]) -> Tuple[bool, str, Optional[dict]]:
+    tongling_root = os.environ.get("TONGLING_ROOT") or os.path.dirname(os.path.dirname(__file__))
+    if tongling_root not in __import__("sys").path:
+        __import__("sys").path.insert(0, tongling_root)
+
+    from cc_visual.claude_launcher import prepare_launch
+    from cc_visual.claude_options import LaunchOptions
+
+    workdir = body.get("workdir") or ""
+    proxy = str(body.get("proxy") or "")
+    initial_prompt = str(body.get("initial_prompt") or "")
+    cols = int(body.get("cols") or 120)
+    rows = int(body.get("rows") or 40)
+
+    opts = LaunchOptions()
+    if body.get("model"):
+        opts.model = str(body["model"])
+    if body.get("permission_mode"):
+        opts.permission_mode = str(body["permission_mode"])
+
+    launch_mode = str(body.get("launch_mode") or "interactive").strip()
+    if launch_mode in ("continue", "resume", "print"):
+        opts.mode = launch_mode
+    if launch_mode == "resume" and body.get("resume_id"):
+        opts.resume_id = str(body["resume_id"]).strip()
+    if body.get("fork_session"):
+        opts.fork_session = True
+
+    ok, msg, spec = prepare_launch(
+        proxy=proxy,
+        work_dir=workdir,
+        initial_prompt=initial_prompt,
+        ascii_cwd=True,
+        options=opts,
+    )
+    if not ok or not spec:
+        return False, msg or "无法准备启动", None
+    spec["cols"] = cols
+    spec["rows"] = rows
+    return True, msg, spec

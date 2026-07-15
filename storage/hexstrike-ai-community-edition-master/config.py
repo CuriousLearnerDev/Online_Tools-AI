@@ -1,0 +1,142 @@
+# Global configuration for HexStrike AI Community Edition
+
+_config = {
+    "APP_NAME": "HexStrike AI Community Edition",
+    "VERSION": "1.1.2 - rootkitfox",
+    "DATA_DIR_NAME": ".hexstrike_data",  # Root data directory name (relative to cwd, override with HEXSTRIKE_DATA_DIR env var)
+    "COMMAND_TIMEOUT": 300,
+    "CACHE_SIZE": 1000,
+    "CACHE_TTL": 3600,  # 1 hour
+    "TOOL_AVAILABILITY_TTL": 3600,  # 1 hour
+    "DEFAULT_HEXSTRIKE_SERVER": "http://127.0.0.1:8888",
+    "MAX_RETRIES": 3,
+    "WORD_LISTS": {
+
+        # --- Password Lists ---
+        "rockyou": {
+            "path": "/usr/share/wordlists/rockyou.txt",
+            "type": "password",
+            "description": "Common password list for brute-force attacks",
+            "recommended_for": ["password_cracking", "login_fuzzing"],
+            "size": 14344392,
+            "tool": ["john", "hydra"],
+            "speed": "slow",
+            "language": "en",
+            "coverage": "broad",
+            "format": "txt"
+        },
+        "john": {
+            "path": "/usr/share/wordlists/john.lst",
+            "type": "password",
+            "description": "John the Ripper password list",
+            "recommended_for": ["password_cracking", "john"],
+            "size": 3559,
+            "tool": ["john"],
+            "speed": "fast",
+            "language": "en",
+            "coverage": "focused",
+            "format": "lst"
+        },
+
+        # --- Directory Lists ---
+        "common_dirb": {
+            "path": "..\common.txt",
+            "type": "directory",
+            "description": "Common directory names for web discovery",
+            "recommended_for": ["dirbusting", "web_content_discovery"],
+            "size": 4614,
+            "tool": ["dirb"],
+            "speed": "medium",
+            "language": "en",
+            "coverage": "broad",
+            "format": "txt"
+        },
+        "big_dirb": {
+            "path": "/usr/share/wordlists/dirb/big.txt",
+            "type": "directory",
+            "description": "Large directory wordlist for web discovery",
+            "recommended_for": ["dirbusting"],
+            "size": 20469,
+            "tool": ["dirb"],
+            "speed": "slow",
+            "language": "en",
+            "coverage": "broad",
+            "format": "txt"
+        },
+        "small_dirb": {
+            "path": "/usr/share/wordlists/dirb/small.txt",
+            "type": "directory",
+            "description": "Small directory wordlist for quick scans",
+            "recommended_for": ["dirbusting"],
+            "size": 959,
+            "tool": ["dirb"],
+            "speed": "fast",
+            "language": "en",
+            "coverage": "focused",
+            "format": "txt"
+        },
+        "common_dirsearch": {
+            "path": "storage/dirsearch/common.txt",
+            "type": "directory",
+            "description": "Common directory names for Dirsearch",
+            "recommended_for": ["dirsearch", "web_content_discovery"],
+            "size": 2205,
+            "tool": ["dirsearch"],
+            "speed": "medium",
+            "language": "en",
+            "coverage": "focused",
+            "format": "txt"
+        }
+    }
+}
+COMMAND_TIMEOUT=300
+CACHE_SIZE=1000
+CACHE_TTL=3600
+TOOL_AVAILABILITY_TTL=3600
+
+# --- HexStrike GUI managed wordlists: start ---
+WORDLISTS = [
+  {
+    "name": "rockyou",
+    "type": "password",
+    "speed": "slow",
+    "coverage": "broad",
+    "path": "..\common.txt"
+  },
+  {
+    "name": "john",
+    "type": "password",
+    "speed": "fast",
+    "coverage": "focused",
+    "path": "..\common.txt"
+  },
+  {
+    "name": "common_dirb",
+    "type": "directory",
+    "speed": "medium",
+    "coverage": "broad",
+    "path": "..\common.txt"
+  },
+  {
+    "name": "big_dirb",
+    "type": "directory",
+    "speed": "slow",
+    "coverage": "broad",
+    "path": "..\common.txt"
+  },
+  {
+    "name": "small_dirb",
+    "type": "directory",
+    "speed": "fast",
+    "coverage": "focused",
+    "path": "..\common.txt"
+  },
+  {
+    "name": "common_dirsearch",
+    "type": "directory",
+    "speed": "medium",
+    "coverage": "focused",
+    "path": "..\common.txt"
+  }
+]
+# --- HexStrike GUI managed wordlists: end ---

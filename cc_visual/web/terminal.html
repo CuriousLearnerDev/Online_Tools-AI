@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="vendor/xterm.min.css">
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      background: #0d1117;
+      overflow: hidden;
+    }
+    #terminal {
+      width: 100%;
+      height: 100%;
+      box-sizing: border-box;
+      padding: 4px;
+    }
+  </style>
+</head>
+<body>
+  <div id="terminal"></div>
+  <script src="vendor/xterm.min.js"></script>
+  <script src="vendor/xterm-addon-fit.min.js"></script>
+  <script src="qrc:///qtwebchannel/qwebchannel.js"></script>
+  <script>
+    (function () {
+      const term = new Terminal({
+        cursorBlink: true,
+        fontFamily: "Cascadia Code, Consolas, 'Courier New', monospace",
+        fontSize: 14,
+        lineHeight: 1.15,
+        scrollback: 5000,
+        convertEol: false,
+        theme: {
+          background: "#0d1117",
+          foreground: "#c9d1d9",
+          cursor: "#58a6ff",
+          cursorAccent: "#0d1117",
+          selectionBackground: "#3b5078",
+        },
+      });
+
+      const fitAddon = new FitAddon.FitAddon();
+      term.loadAddon(fitAddon);
+      term.open(document.getElementById("terminal"));
+
+      let bridge = null;
+
+      function fitTerminal() {
+        try {
+          fitAddon.fit();
+        } catch (e) {
+          /* ignore during hidden layout */
+        }
+        if (bridge && term.cols > 0 && term.rows > 0) {
+          bridge.resize(term.cols, term.rows);
+        }
+      }
+      window.fitTerminal = fitTerminal;
+
+      window.addEventListener("resize", () => setTimeout(fitTerminal, 80));
+
+      term.onData((data) => {
+        if (bridge) bridge.sendInput(data);
+      });
+
+      term.onResize((size) => {
+        if (bridge) bridge.resize(size.cols, size.rows);
+      });
+
+      new QWebChannel(qt.webChannelTransport, (channel) => {
+        bridge = channel.objects.bridge;
+        bridge.output.connect((data) => {
+          term.write(data);
+        });
+        setTimeout(() => {
+          fitTerminal();
+          bridge.ready();
+        }, 60);
+      });
+    })();
+  </script>
+</body>
+</html>

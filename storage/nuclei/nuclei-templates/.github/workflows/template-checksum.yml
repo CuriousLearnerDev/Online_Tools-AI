@@ -1,0 +1,48 @@
+name: 📝 Template Checksum
+
+on:
+  # For YAML changes: wait for signing to complete first, then checksum
+  workflow_run:
+    workflows:
+      - "☑️ Template Sign"
+    types:
+      - completed
+    branches:
+      - main
+  # For non-YAML changes: trigger directly (signing doesn't run for these)
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - '**.yaml'
+      - 'templates-checksum.txt'
+  workflow_dispatch:
+
+env:
+  CHECKSUM_FILE: 'templates-checksum.txt'
+
+jobs:
+  checksum:
+    runs-on: ubuntu-latest
+    if: >
+      github.repository == 'projectdiscovery/nuclei-templates' && (
+        github.event_name == 'workflow_dispatch' ||
+        github.event_name == 'push' ||
+        github.event.workflow_run.conclusion == 'success'
+      )
+    steps:
+      - uses: actions/checkout@v7
+      - uses: projectdiscovery/actions/generate/checksum@v1
+        with:
+          templates-directory: '${{ github.workspace }}'
+          checksum-file: '${{ env.CHECKSUM_FILE }}'
+      - run: git status
+      - uses: projectdiscovery/actions/setup/git@v1
+      - uses: projectdiscovery/actions/commit@v1
+        with:
+          files: '${{ env.CHECKSUM_FILE }}'
+          message: 'chore: generate templates checksum 🤖'
+      - name: Push changes
+        run: |
+          git pull origin $GITHUB_REF --rebase
+          git push origin $GITHUB_REF

@@ -1,0 +1,1423 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#0d0f14" />
+  <script>
+    (function () {
+      try {
+        var t = localStorage.getItem('tongling_web_theme') || 'deep';
+        document.documentElement.setAttribute('data-theme', t);
+      } catch (e) {}
+    })();
+  </script>
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>统领 · AI 渗透</title>
+  <link rel="icon" href="/tongling/static/favicon.ico" sizes="any" />
+  <link rel="icon" type="image/png" href="/tongling/static/favicon.png" sizes="128x128" />
+  <link rel="apple-touch-icon" href="/tongling/static/favicon.png" />
+  <link rel="manifest" href="/tongling/manifest.webmanifest" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Noto+Sans+SC:wght@400;500;600;700&family=Noto+Serif+SC:wght@300;400;500&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/tongling/static/vendor/xterm.min.css" />
+  <link rel="stylesheet" href="/tongling/static/themes.css" />
+  <link rel="stylesheet" href="/tongling/static/styles.css" />
+  <link rel="stylesheet" href="/tongling/static/im-bridge.css" />
+</head>
+<body>
+  <div class="layout" id="app-layout">
+    <!-- 桌面侧栏 -->
+    <aside class="sidebar desktop-only">
+      <div class="sidebar-brand">
+        <img class="brand-mark" src="/tongling/static/favicon.png" alt="统领" width="32" height="32" />
+        <div class="brand-text">
+          <strong>统领</strong>
+          <span data-i18n="brand.sub">AI 渗透控制台</span>
+        </div>
+      </div>
+      <nav class="sidebar-nav" id="sidebar-nav">
+        <div class="nav-group">
+          <div class="nav-group-label" data-i18n="nav.group.work">工作台</div>
+          <button type="button" class="nav-item active" data-tab="agent"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M12 3l1.5 4.5L18 9l-4.5 1.5L12 15l-1.5-4.5L6 9l4.5-1.5L12 3z"/><path d="M5 19h14"/></svg></span><span data-i18n="nav.agent">AI 智能体</span></button>
+          <button type="button" class="nav-item" data-tab="run"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><polygon points="8,5 19,12 8,19"/></svg></span><span data-i18n="nav.run">接口运行</span></button>
+          <button type="button" class="nav-item" data-tab="tasks"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M8 10h8M8 14h5"/></svg></span><span data-i18n="nav.tasks">任务监控</span></button>
+        </div>
+        <div class="nav-group">
+          <div class="nav-group-label" data-i18n="nav.group.scan">扫描</div>
+          <button type="button" class="nav-item" data-tab="reports"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M7 4h7l4 4v12a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1z"/><path d="M14 4v4h4"/><path d="M9 12h6M9 16h4"/></svg></span><span data-i18n="nav.reports">扫描报告</span></button>
+          <button type="button" class="nav-item" data-tab="scanviz"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><circle cx="6" cy="6" r="2"/><circle cx="18" cy="6" r="2"/><circle cx="12" cy="18" r="2"/><path d="M8 6h8M7.5 7.5L10.5 16.5M16.5 7.5L13.5 16.5"/></svg></span><span data-i18n="nav.scanviz">扫描图谱</span></button>
+        </div>
+        <div class="nav-group">
+          <div class="nav-group-label" data-i18n="nav.group.res">资源</div>
+          <button type="button" class="nav-item" data-tab="files"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z"/></svg></span><span data-i18n="nav.files">文件管理</span></button>
+          <button type="button" class="nav-item" data-tab="tools"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L4 17l3 3 5.3-5.3a4 4 0 0 0 5.4-5.4l-2.1 2.1-3.3-3.3 2.1-2.1z"/></svg></span><span data-i18n="nav.tools">工具目录</span></button>
+          <button type="button" class="nav-item" data-tab="skills"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M12 2l2.4 4.8L20 8l-4 3.9.9 5.6L12 15.8 7.1 17.5 8 11.9 4 8l5.6-1.2L12 2z"/></svg></span><span data-i18n="nav.skills">Skills</span></button>
+          <button type="button" class="nav-item" data-tab="prompts"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M7 4h10a1 1 0 0 1 1 1v14l-6-3-6 3V5a1 1 0 0 1 1-1z"/><path d="M9 8h6M9 12h4"/></svg></span><span data-i18n="nav.prompts">提示词库</span></button>
+          <button type="button" class="nav-item" data-tab="fplib"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M12 2a7 7 0 0 1 7 7c0 2.8-1.7 5.2-4 6.3V18H9v-2.7A7 7 0 0 1 12 2z"/><path d="M9 21h6"/></svg></span><span data-i18n="nav.fplib">指纹库</span></button>
+          <button type="button" class="nav-item" data-tab="vulnlib"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M12 3l8 4v5c0 5-3.5 8.7-8 9-4.5-.3-8-4-8-9V7l8-4z"/><path d="M9 12l2 2 4-4"/></svg></span><span data-i18n="nav.vulnlib">漏洞库</span></button>
+          <button type="button" class="nav-item" data-tab="mcp"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M8 8h8v8H8z"/><path d="M4 12H2M22 12h-2M12 4V2M12 22v-2M6 6L4.5 4.5M19.5 19.5L18 18M18 6l1.5-1.5M6 18l-1.5 1.5"/></svg></span><span data-i18n="nav.mcp">MCP 连接</span></button>
+        </div>
+        <div class="nav-group">
+          <div class="nav-group-label" data-i18n="nav.group.bridge">接入</div>
+          <button type="button" class="nav-item" data-tab="im"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M4 5h16a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H8l-4 3V6a1 1 0 0 1 1-1z"/></svg></span><span data-i18n="nav.im">社交接入</span></button>
+          <button type="button" class="nav-item" data-tab="nps"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M7 7h10v10H7z"/><path d="M3 12h4M17 12h4M12 3v4M12 17v4"/></svg></span><span data-i18n="nav.nps">内网穿透</span></button>
+        </div>
+        <div class="nav-group">
+          <div class="nav-group-label" data-i18n="nav.group.sys">系统</div>
+          <button type="button" class="nav-item" data-tab="logs"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M5 6h14M5 10h14M5 14h10M5 18h7"/></svg></span><span data-i18n="nav.logs">服务日志</span></button>
+          <button type="button" class="nav-item" data-tab="settings"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><circle cx="12" cy="12" r="3"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg></span><span data-i18n="nav.settings">设置</span></button>
+          <button type="button" class="nav-item" data-tab="help"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 4.2 1.8c-.8.7-1.2 1.4-1.2 2.2"/><circle cx="12" cy="17" r=".75" fill="currentColor" stroke="none"/></svg></span><span data-i18n="nav.help">工具说明</span></button>
+        </div>
+      </nav>
+      <div class="sidebar-footer">
+        <div class="sidebar-footer-main">
+          <div class="status-dot" id="status-dot"></div>
+          <span class="sidebar-status" id="global-status" data-i18n="status.connecting">连接中…</span>
+        </div>
+        <label class="sidebar-theme">
+          <span class="sidebar-theme-label" data-i18n="theme.label">界面主题</span>
+          <select class="theme-select" id="theme-select" aria-label="界面主题">
+            <option value="deep" data-i18n="theme.deep">深邃</option>
+            <option value="dark" data-i18n="theme.dark">暗色</option>
+            <option value="light" data-i18n="theme.light">浅色</option>
+          </select>
+        </label>
+        <label class="sidebar-theme sidebar-lang">
+          <span class="sidebar-theme-label" data-i18n="lang.label">界面语言</span>
+          <button type="button" class="btn btn-ghost btn-sm lang-toggle-btn" id="btn-lang-toggle" title="Switch to English">English</button>
+        </label>
+        <label class="sidebar-mac-term" title="PC 默认进入多窗口工作台；取消勾选后下次打开智能体不再自动进入">
+          <input type="checkbox" id="toggle-mac-term" />
+          <span data-i18n="pref.macTerm">默认打开工作台</span>
+        </label>
+      </div>
+    </aside>
+
+    <div class="main-area">
+      <!-- 手机 App 顶栏 -->
+      <header class="mobile-app-header mobile-only">
+        <div class="m-header-left">
+          <img class="m-brand-mark" src="/tongling/static/favicon.png" alt="统领" width="32" height="32" />
+          <div class="m-header-text">
+            <div class="m-header-title" id="m-page-title" data-i18n="tab.agent">AI 智能体</div>
+            <div class="m-header-status" id="m-header-status" data-i18n="status.connecting">连接中…</div>
+          </div>
+        </div>
+        <div class="m-header-actions">
+          <span class="m-token-pill mono" id="m-token-stats" hidden title="Token 用量">↓0·0</span>
+          <span class="m-term-pill mono" id="m-term-status" hidden data-i18n="status.disconnected">未连接</span>
+          <button type="button" class="m-icon-btn" id="m-header-controls" aria-label="控制面板" title="控制">
+            <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M4 6h16v2H4V6zm0 5h16v2H4v-2zm0 5h10v2H4v-2z"/></svg>
+          </button>
+        </div>
+      </header>
+
+      <header class="page-crumb-bar" id="page-crumb-bar" hidden aria-hidden="true">
+        <div class="page-crumb-left">
+          <button type="button" class="page-crumb-back" id="btn-page-crumb-back" data-i18n="crumb.console">← 控制台</button>
+          <h1 class="page-crumb-title" id="page-crumb-title"></h1>
+        </div>
+      </header>
+
+      <main class="shell-main">
+        <section class="tab-panel active" id="panel-agent" data-tab="agent">
+          <div class="mac-menubar" id="mac-menubar" hidden aria-hidden="true" title="多窗口工作台 · 程序栏与终端">
+            <div class="mac-menubar-left">
+              <div class="mac-menu-dropdown" id="mac-menu-apple-wrap">
+                <button type="button" class="mac-apple-btn" id="btn-mac-apple" title="统领菜单" aria-label="统领菜单" aria-haspopup="true" aria-expanded="false">
+                  <img class="mac-apple-icon" src="/tongling/static/favicon.png" alt="" width="16" height="16" />
+                </button>
+                <div class="mac-menu-panel mac-apple-panel" id="mac-menu-apple-panel" hidden role="menu">
+                  <button type="button" role="menuitem" id="btn-mac-apple-about" data-i18n="menubar.about">关于统领</button>
+                  <div class="mac-menu-sep" role="separator"></div>
+                  <button type="button" role="menuitem" id="btn-mac-apple-control" data-i18n="menubar.control">控制面板</button>
+                  <button type="button" role="menuitem" id="btn-mac-apple-files" data-i18n="menubar.files">文件管理</button>
+                  <button type="button" role="menuitem" id="btn-mac-apple-dock" data-i18n="menubar.dock">显示 / 隐藏程序栏</button>
+                  <div class="mac-menu-sep" role="separator"></div>
+                  <button type="button" role="menuitem" id="btn-mac-apple-exit" data-i18n="menubar.exitDesk">退出多窗口桌面</button>
+                </div>
+              </div>
+              <button type="button" class="mac-menu-item" id="btn-mac-menu-programs" title="显示/隐藏程序栏" data-i18n="menubar.programs">程序</button>
+              <span class="mac-menu-item mac-menu-static" id="mac-menubar-app">终端</span>
+              <div class="mac-menu-dropdown" id="mac-menu-window-wrap">
+                <button type="button" class="mac-menu-item" id="btn-mac-menu-window" aria-haspopup="true" aria-expanded="false" data-i18n="menubar.window">窗口</button>
+                <div class="mac-menu-panel" id="mac-menu-window-panel" hidden role="menu">
+                  <div class="mac-menu-win-list" id="mac-menu-win-list" role="group" aria-label="打开的窗口"></div>
+                  <div class="mac-menu-sep" role="separator"></div>
+                  <button type="button" role="menuitem" id="btn-mac-win-new" data-i18n="menubar.newTerm">新建终端窗口</button>
+                  <button type="button" role="menuitem" id="btn-mac-win-cycle" data-i18n="menubar.cycle">循环窗口</button>
+                  <button type="button" role="menuitem" id="btn-mac-win-exit" data-i18n="menubar.exit">退出工作台</button>
+                </div>
+              </div>
+            </div>
+            <div class="mac-menubar-actions" id="mac-menubar-actions">
+              <button type="button" class="btn btn-ghost btn-sm" id="btn-mac-scan-dock" title="扫描摘要" aria-pressed="false" data-i18n="menubar.scan">扫描摘要</button>
+              <button type="button" class="btn btn-primary btn-sm" id="btn-mac-term-new" data-i18n="menubar.newWin">新建窗口</button>
+              <button type="button" class="btn btn-ghost btn-sm" id="btn-mac-term-exit" data-i18n="menubar.exit">退出工作台</button>
+              <button type="button" class="btn btn-ghost btn-sm lang-toggle-btn" id="btn-mac-lang" title="Switch to English">English</button>
+            </div>
+            <div class="mac-menubar-right">
+              <span class="mac-menubar-metrics mono" id="mac-menubar-metrics" title="本机资源占用" aria-live="polite">
+                <span class="mac-metric" id="mac-metric-cpu"><span class="mac-metric-k">CPU</span> —</span>
+                <span class="mac-metric" id="mac-metric-mem"><span class="mac-metric-k" data-i18n="menubar.mem">内存</span> —</span>
+              </span>
+              <span class="mac-menubar-clock mono" id="mac-menubar-clock"></span>
+            </div>
+          </div>
+          <div class="mac-wallpaper-brand" id="mac-wallpaper-brand" hidden aria-hidden="true">
+            <p class="mac-wallpaper-title">统领</p>
+            <p class="mac-wallpaper-sub" data-i18n="wallpaper.sub">TongLing · 多窗口工作台</p>
+          </div>
+          <div class="mac-term-stage" id="mac-term-stage" hidden></div>
+          <div class="mac-connect-banner hidden" id="mac-connect-banner" role="alert" aria-live="polite">
+            <div class="term-connect-banner-main">
+              <div class="term-connect-banner-title" data-i18n="banner.title">无法连接 Anthropic 官方 API</div>
+              <p class="term-connect-banner-text" data-i18n="banner.text">Claude Code 直连 api.anthropic.com 失败（网络不通或地区限制）。请在「模型 / API」中配置第三方 API（Base URL + Key），点击「应用」后「新建终端」重试。</p>
+              <div class="term-connect-banner-actions">
+                <button type="button" class="btn btn-accent btn-sm" id="btn-mac-banner-provider" data-i18n="banner.config">去配置 API</button>
+                <button type="button" class="btn btn-ghost btn-sm" id="btn-mac-banner-import" data-i18n="banner.import">从 settings 导入</button>
+                <button type="button" class="btn btn-ghost btn-sm" id="btn-mac-banner-dismiss" data-i18n="banner.dismiss">不再提示</button>
+              </div>
+            </div>
+            <button type="button" class="term-connect-banner-close" id="btn-mac-banner-close" aria-label="关闭">×</button>
+          </div>
+          <div class="mac-desktop-tip" id="mac-desktop-tip" hidden role="status">
+            <p data-i18n="tip.desktop">多窗口工作台：点「−」最小化 → 程序栏「智能体」或菜单「窗口」可还原；程序栏「控制」打开面板；再次点击前置程序可收起窗口。</p>
+            <button type="button" class="btn btn-ghost btn-sm" id="btn-mac-tip-dismiss" data-i18n="tip.ok">知道了</button>
+          </div>
+<!-- 底部程序栏（统领自有样式） -->
+          <nav class="mac-dock" id="mac-dock" hidden aria-label="程序栏">
+            <div class="mac-dock-inner" id="mac-dock-inner">
+              <button type="button" class="mac-dock-item" data-tab="agent" title="AI 智能体">
+                <span class="mac-dock-icon" aria-hidden="true">
+                  <svg viewBox="0 0 64 64" class="mac-dock-appicon"><defs><linearGradient id="d-term" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#1a3a32"/><stop offset="100%" stop-color="#0c1814"/></linearGradient></defs><rect width="64" height="64" rx="10" fill="url(#d-term)"/><rect x="10" y="14" width="44" height="36" rx="4" fill="#06100c" stroke="rgba(0,230,118,.35)" stroke-width="1.5"/><path fill="none" stroke="#00e676" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" d="M18 30l7 5.5L18 41"/><path fill="none" stroke="#00e676" stroke-width="2.2" stroke-linecap="round" d="M28 41h14"/></svg>
+                </span>
+                <span class="mac-dock-label" data-i18n="dock.agent">智能体</span>
+              </button>
+              <button type="button" class="mac-dock-item" data-tab="control" title="控制面板 · API / 会话 / 审计">
+                <span class="mac-dock-icon" aria-hidden="true">
+                  <svg viewBox="0 0 64 64" class="mac-dock-appicon"><defs><linearGradient id="d-ctl" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#ffd60a"/><stop offset="55%" stop-color="#ff9f0a"/><stop offset="100%" stop-color="#c93400"/></linearGradient></defs><rect width="64" height="64" rx="14" fill="url(#d-ctl)"/><g fill="rgba(255,255,255,.95)"><rect x="12" y="12" width="18" height="18" rx="4"/><rect x="34" y="12" width="18" height="18" rx="4"/><rect x="12" y="34" width="18" height="18" rx="4"/><rect x="34" y="34" width="18" height="18" rx="4"/></g></svg>
+                </span>
+                <span class="mac-dock-label" data-i18n="dock.control">控制</span>
+              </button>
+              <button type="button" class="mac-dock-item" data-tab="files" title="文件管理 · 统领项目目录">
+                <span class="mac-dock-icon" aria-hidden="true">
+                  <svg viewBox="0 0 64 64" class="mac-dock-appicon"><defs><linearGradient id="d-files" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#7dd3fc"/><stop offset="100%" stop-color="#0369a1"/></linearGradient></defs><rect width="64" height="64" rx="10" fill="url(#d-files)"/><path fill="#fef9c3" d="M12 20h16l4 4h20a4 4 0 0 1 4 4v20a4 4 0 0 1-4 4H12a4 4 0 0 1-4-4V24a4 4 0 0 1 4-4z"/><path fill="#fde047" d="M8 28h48v20a4 4 0 0 1-4 4H12a4 4 0 0 1-4-4V28z"/></svg>
+                </span>
+                <span class="mac-dock-label" data-i18n="dock.files">文件</span>
+              </button>
+              <button type="button" class="mac-dock-item" data-tab="run" title="接口运行">
+                <span class="mac-dock-icon" aria-hidden="true">
+                  <svg viewBox="0 0 64 64" class="mac-dock-appicon"><defs><linearGradient id="d-run" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#6dde85"/><stop offset="100%" stop-color="#1a8f3c"/></linearGradient></defs><rect width="64" height="64" rx="14" fill="url(#d-run)"/><path fill="#fff" d="M24 16l24 16-24 16V16z"/></svg>
+                </span>
+                <span class="mac-dock-label" data-i18n="dock.run">运行</span>
+              </button>
+              <button type="button" class="mac-dock-item" data-tab="tasks" title="任务监控">
+                <span class="mac-dock-icon" aria-hidden="true">
+                  <svg viewBox="0 0 64 64" class="mac-dock-appicon"><defs><linearGradient id="d-task" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#7ad3ff"/><stop offset="100%" stop-color="#0071a4"/></linearGradient></defs><rect width="64" height="64" rx="14" fill="url(#d-task)"/><rect x="18" y="12" width="28" height="8" rx="3" fill="#fff"/><rect x="14" y="20" width="36" height="34" rx="5" fill="#fff"/><path fill="#32ade6" d="M24 34l5 5 12-12-3-3-9 9-2-2z"/></svg>
+                </span>
+                <span class="mac-dock-label" data-i18n="dock.tasks">任务</span>
+              </button>
+              <span class="mac-dock-sep" aria-hidden="true"></span>
+              <button type="button" class="mac-dock-item" data-tab="reports" title="扫描报告">
+                <span class="mac-dock-icon" aria-hidden="true">
+                  <svg viewBox="0 0 64 64" class="mac-dock-appicon"><defs><linearGradient id="d-rep" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#ffc14a"/><stop offset="100%" stop-color="#c93400"/></linearGradient></defs><rect width="64" height="64" rx="14" fill="url(#d-rep)"/><path fill="#fff" d="M20 10h18l10 10v30a4 4 0 0 1-4 4H20a4 4 0 0 1-4-4V14a4 4 0 0 1 4-4z"/><path fill="#ff9f0a" d="M38 10v10h10z"/><rect x="24" y="30" width="16" height="3" rx="1.5" fill="#c93400"/><rect x="24" y="38" width="12" height="3" rx="1.5" fill="#c93400"/></svg>
+                </span>
+                <span class="mac-dock-label" data-i18n="dock.reports">报告</span>
+              </button>
+              <button type="button" class="mac-dock-item" data-tab="scanviz" title="扫描图谱">
+                <span class="mac-dock-icon" aria-hidden="true">
+                  <svg viewBox="0 0 64 64" class="mac-dock-appicon"><defs><linearGradient id="d-scan" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#e39dff"/><stop offset="100%" stop-color="#8944ab"/></linearGradient></defs><rect width="64" height="64" rx="14" fill="url(#d-scan)"/><circle cx="32" cy="32" r="6" fill="#fff"/><circle cx="32" cy="32" r="14" fill="none" stroke="#fff" stroke-width="3.5" opacity=".9"/><circle cx="32" cy="32" r="22" fill="none" stroke="#fff" stroke-width="3" opacity=".55"/></svg>
+                </span>
+                <span class="mac-dock-label" data-i18n="dock.scanviz">图谱</span>
+              </button>
+              <span class="mac-dock-sep" aria-hidden="true"></span>
+              <button type="button" class="mac-dock-item" data-tab="tools" title="工具目录">
+                <span class="mac-dock-icon" aria-hidden="true">
+                  <svg viewBox="0 0 64 64" class="mac-dock-appicon"><defs><linearGradient id="d-tool" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#ffe566"/><stop offset="100%" stop-color="#ff9f0a"/></linearGradient></defs><rect width="64" height="64" rx="14" fill="url(#d-tool)"/><path fill="#1d1d1f" d="M40 14a10 10 0 0 0-12 14l-14 14a4 4 0 0 0 6 6l14-14a10 10 0 0 0 14-12l-6 6-4-4 6-6a10 10 0 0 0-4-4z"/></svg>
+                </span>
+                <span class="mac-dock-label" data-i18n="dock.tools">工具</span>
+              </button>
+              <button type="button" class="mac-dock-item" data-tab="skills" title="Skills">
+                <span class="mac-dock-icon" aria-hidden="true">
+                  <svg viewBox="0 0 64 64" class="mac-dock-appicon"><defs><linearGradient id="d-sk" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#ff7a93"/><stop offset="100%" stop-color="#d70015"/></linearGradient></defs><rect width="64" height="64" rx="14" fill="url(#d-sk)"/><path fill="#fff" d="M32 10l4.2 12.8L49 27l-12.8 3.2L32 43l-4.2-12.8L15 27l12.8-4.2z"/><path fill="#fff" opacity=".85" d="M46 40l2 6 6 2-6 2-2 6-2-6-6-2 6-2z"/></svg>
+                </span>
+                <span class="mac-dock-label" data-i18n="dock.skills">Skills</span>
+              </button>
+              <button type="button" class="mac-dock-item" data-tab="prompts" title="提示词库">
+                <span class="mac-dock-icon" aria-hidden="true">
+                  <svg viewBox="0 0 64 64" class="mac-dock-appicon"><defs><linearGradient id="d-pr" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#e8d2b0"/><stop offset="100%" stop-color="#7a5c3a"/></linearGradient></defs><rect width="64" height="64" rx="14" fill="url(#d-pr)"/><path fill="#fff" d="M18 10h24a4 4 0 0 1 4 4v34l-10-6H18a4 4 0 0 1-4-4V14a4 4 0 0 1 4-4z"/><rect x="24" y="20" width="16" height="3" rx="1.5" fill="#ac8e68"/><rect x="24" y="28" width="12" height="3" rx="1.5" fill="#ac8e68"/></svg>
+                </span>
+                <span class="mac-dock-label" data-i18n="dock.prompts">提示词</span>
+              </button>
+              <button type="button" class="mac-dock-item" data-tab="fplib" title="指纹库">
+                <span class="mac-dock-icon" aria-hidden="true">
+                  <svg viewBox="0 0 64 64" class="mac-dock-appicon"><defs><linearGradient id="d-fp" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#6dde85"/><stop offset="100%" stop-color="#1a8f3c"/></linearGradient></defs><rect width="64" height="64" rx="14" fill="url(#d-fp)"/><g fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round"><path d="M32 18c6 0 10 5 10 12 0 8-2 16-4 22"/><path d="M26 22c-4 3-6 8-6 13 0 7 1 14 2 20"/><path d="M38 24c3 3 5 8 5 13"/><circle cx="32" cy="16" r="2.5" fill="#fff" stroke="none"/></g></svg>
+                </span>
+                <span class="mac-dock-label" data-i18n="dock.fplib">指纹</span>
+              </button>
+              <button type="button" class="mac-dock-item" data-tab="vulnlib" title="漏洞库">
+                <span class="mac-dock-icon" aria-hidden="true">
+                  <svg viewBox="0 0 64 64" class="mac-dock-appicon"><defs><linearGradient id="d-vuln" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#ff8a80"/><stop offset="100%" stop-color="#b01e1a"/></linearGradient></defs><rect width="64" height="64" rx="14" fill="url(#d-vuln)"/><path fill="#fff" d="M32 10l18 8v12c0 12-8 20-18 22-10-2-18-10-18-22V18z"/><rect x="29" y="24" width="6" height="14" rx="2" fill="#b01e1a"/><circle cx="32" cy="44" r="3.2" fill="#b01e1a"/></svg>
+                </span>
+                <span class="mac-dock-label" data-i18n="dock.vulnlib">漏洞</span>
+              </button>
+              <button type="button" class="mac-dock-item" data-tab="mcp" title="MCP 连接">
+                <span class="mac-dock-icon" aria-hidden="true">
+                  <svg viewBox="0 0 64 64" class="mac-dock-appicon"><defs><linearGradient id="d-mcp" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#9b9bf0"/><stop offset="100%" stop-color="#3634a3"/></linearGradient></defs><rect width="64" height="64" rx="14" fill="url(#d-mcp)"/><rect x="20" y="22" width="24" height="22" rx="6" fill="#fff"/><rect x="26" y="10" width="5" height="14" rx="2.5" fill="#fff"/><rect x="33" y="10" width="5" height="14" rx="2.5" fill="#fff"/><rect x="29.5" y="42" width="5" height="12" rx="2.5" fill="#fff"/></svg>
+                </span>
+                <span class="mac-dock-label" data-i18n="dock.mcp">MCP</span>
+              </button>
+              <span class="mac-dock-sep" aria-hidden="true"></span>
+              <button type="button" class="mac-dock-item" data-tab="im" title="社交接入">
+                <span class="mac-dock-icon" aria-hidden="true">
+                  <svg viewBox="0 0 64 64" class="mac-dock-appicon"><defs><linearGradient id="d-im" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#7ad3ff"/><stop offset="100%" stop-color="#0071a4"/></linearGradient></defs><rect width="64" height="64" rx="14" fill="url(#d-im)"/><path fill="#fff" d="M14 18a10 10 0 0 1 10-10h16a10 10 0 0 1 10 10v14a10 10 0 0 1-10 10H28l-10 8v-8a10 10 0 0 1-4-16z"/></svg>
+                </span>
+                <span class="mac-dock-label" data-i18n="dock.im">社交</span>
+              </button>
+              <button type="button" class="mac-dock-item" data-tab="nps" title="内网穿透">
+                <span class="mac-dock-icon" aria-hidden="true">
+                  <svg viewBox="0 0 64 64" class="mac-dock-appicon"><defs><linearGradient id="d-nps" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#ffc14a"/><stop offset="100%" stop-color="#a04a00"/></linearGradient></defs><rect width="64" height="64" rx="14" fill="url(#d-nps)"/><circle cx="32" cy="32" r="5" fill="#fff"/><circle cx="32" cy="32" r="13" fill="none" stroke="#fff" stroke-width="3.5"/><circle cx="32" cy="32" r="21" fill="none" stroke="#fff" stroke-width="3" opacity=".65"/></svg>
+                </span>
+                <span class="mac-dock-label" data-i18n="dock.nps">穿透</span>
+              </button>
+              <span class="mac-dock-sep" aria-hidden="true"></span>
+              <button type="button" class="mac-dock-item" data-tab="logs" title="服务日志">
+                <span class="mac-dock-icon" aria-hidden="true">
+                  <svg viewBox="0 0 64 64" class="mac-dock-appicon"><defs><linearGradient id="d-log" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#d1d1d6"/><stop offset="100%" stop-color="#48484a"/></linearGradient></defs><rect width="64" height="64" rx="14" fill="url(#d-log)"/><rect x="14" y="12" width="36" height="40" rx="5" fill="#fff"/><rect x="20" y="22" width="20" height="3" rx="1.5" fill="#636366"/><rect x="20" y="30" width="16" height="3" rx="1.5" fill="#636366"/><rect x="20" y="38" width="22" height="3" rx="1.5" fill="#636366"/></svg>
+                </span>
+                <span class="mac-dock-label" data-i18n="dock.logs">日志</span>
+              </button>
+              <button type="button" class="mac-dock-item" data-tab="settings" title="设置">
+                <span class="mac-dock-icon" aria-hidden="true">
+                  <svg viewBox="0 0 64 64" class="mac-dock-appicon"><defs><linearGradient id="d-set" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#e5e5ea"/><stop offset="100%" stop-color="#636366"/></linearGradient></defs><rect width="64" height="64" rx="14" fill="url(#d-set)"/><path fill="#fff" d="M32 18l3 6 7 1-5 5 1 7-6-3-6 3 1-7-5-5 7-1z"/><circle cx="32" cy="34" r="5" fill="#8e8e93"/></svg>
+                </span>
+                <span class="mac-dock-label" data-i18n="dock.settings">设置</span>
+              </button>
+              <button type="button" class="mac-dock-item" data-tab="help" title="工具说明">
+                <span class="mac-dock-icon" aria-hidden="true">
+                  <svg viewBox="0 0 64 64" class="mac-dock-appicon"><defs><linearGradient id="d-help" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#64d2ff"/><stop offset="100%" stop-color="#0040dd"/></linearGradient></defs><rect width="64" height="64" rx="14" fill="url(#d-help)"/><circle cx="32" cy="32" r="18" fill="#fff"/><path fill="#0a84ff" d="M28 26a4.5 4.5 0 1 1 6.5 4c-1.2 1-2 2.2-2 3.8h-4c0-2.4 1-4 2.4-5.1A2.4 2.4 0 1 0 28 26z"/><circle cx="32" cy="42" r="2.4" fill="#0a84ff"/></svg>
+                </span>
+                <span class="mac-dock-label" data-i18n="dock.help">说明</span>
+              </button>
+            </div>
+          </nav>
+          <!-- 扫描摘要：挂在 panel-agent 下，悬浮桌面（term-fs）也能显示 -->
+          <aside class="agent-scan-dock" id="agent-scan-dock" hidden aria-label="扫描结果摘要">
+            <div class="asd-head" id="asd-drag-handle" title="按住拖动位置">
+              <div class="asd-head-main">
+                <div class="asd-title" data-i18n="asd.title">扫描摘要</div>
+                <div class="asd-meta mono" id="asd-meta" data-i18n="asd.wait">等待数据…</div>
+              </div>
+              <div class="asd-actions">
+                <button type="button" class="asd-icon-btn" id="asd-refresh" title="刷新">↻</button>
+                <button type="button" class="asd-icon-btn" id="asd-open-viz" title="打开扫描图谱" data-i18n="dock.scanviz">图谱</button>
+                <button type="button" class="asd-icon-btn" id="asd-minimize" title="最小化">−</button>
+                <button type="button" class="asd-icon-btn" id="asd-close" title="关闭" aria-label="关闭">×</button>
+              </div>
+            </div>
+            <div class="asd-body">
+              <section class="asd-section">
+                <h3 class="asd-section-title" data-i18n="asd.facts">攻击链事实</h3>
+                <div class="asd-panel" id="asd-facts"></div>
+              </section>
+              <section class="asd-section">
+                <h3 class="asd-section-title" data-i18n="asd.findings">漏洞线索</h3>
+                <div class="asd-panel" id="asd-findings"></div>
+              </section>
+              <section class="asd-section">
+                <h3 class="asd-section-title" data-i18n="asd.tools">工具统计</h3>
+                <div class="asd-panel" id="asd-tools"></div>
+              </section>
+            </div>
+          </aside>
+          <button type="button" class="agent-scan-dock-chip" id="agent-scan-dock-chip" hidden title="展开扫描摘要">
+            <span class="asd-chip-label" data-i18n="asd.title">扫描摘要</span>
+            <span class="asd-chip-badge mono" id="asd-chip-badge" hidden></span>
+          </button>
+          <div class="agent-layout" id="agent-layout">
+            <div class="card terminal-card" id="terminal-card">
+              <div class="card-header desktop-only" id="term-card-header">
+                <div class="term-drag-bar" id="term-drag-bar" title="按住拖动窗口">
+                  <div class="mac-traffic mac-traffic-win" aria-hidden="true">
+                    <button type="button" class="mac-dot mac-close" id="btn-mac-close" title="退出多窗口工作台" aria-label="关闭"></button>
+                    <button type="button" class="mac-dot mac-min" id="btn-mac-min" title="退出多窗口工作台" aria-label="最小化"></button>
+                    <button type="button" class="mac-dot mac-max" id="btn-mac-max" title="铺满 / 还原" aria-label="最大化"></button>
+                  </div>
+                  <div class="term-header-main">
+                    <div class="card-title"><span class="dot dot-green"></span> <span id="term-window-title">Claude Code — Terminal</span></div>
+                    <p class="card-desc" data-i18n-html="term.desc">Web 终端 · 复制 <kbd>Ctrl+Shift+C</kbd> · 粘贴 <kbd>Ctrl+Shift+V</kbd></p>
+                  </div>
+                </div>
+                <div class="term-toolbar">
+                  <button type="button" class="btn btn-primary" id="btn-term-start" data-i18n="term.new">新建终端</button>
+                  <button type="button" class="btn btn-ghost" id="btn-term-new" title="新建终端">+</button>
+                  <button type="button" class="btn btn-ghost" id="btn-term-stop" disabled data-i18n="term.close">关闭</button>
+                  <button type="button" class="btn btn-ghost" id="btn-term-clear" data-i18n="term.clear">清屏</button>
+                  <button type="button" class="btn btn-ghost btn-sm" id="btn-agent-scan-dock" title="扫描摘要（攻击链 / 线索 / 工具）" aria-label="扫描摘要" aria-pressed="false" data-i18n="term.scan">扫描</button>
+                  <button type="button" class="btn btn-ghost btn-sm" id="btn-panel-toggle" title="展开/收起控制面板" aria-label="展开或收起控制面板">◧</button>
+                  <button type="button" class="btn btn-ghost btn-sm" id="btn-term-fullscreen" title="多窗口工作台（Esc 退出）" aria-label="多窗口工作台" aria-pressed="false" data-i18n="term.workspace">工作台</button>
+                  <span class="term-token-stats mono" id="term-token-stats" hidden title="当前 Web 终端会话 Token 用量（从 Claude 输出解析）">↓ 0 · 计 0</span>
+                  <span class="term-status mono" id="term-status" data-i18n="status.disconnected">未连接</span>
+                </div>
+              </div>
+              <div class="term-tabs-bar" id="term-tabs-bar">
+                <div class="term-tabs-list" id="term-tabs-list"></div>
+              </div>
+              <div class="term-connect-banner hidden" id="term-connect-banner" role="alert" aria-live="polite">
+                <div class="term-connect-banner-main">
+                  <div class="term-connect-banner-title" data-i18n="banner.title">无法连接 Anthropic 官方 API</div>
+                  <p class="term-connect-banner-text" data-i18n="banner.text">Claude Code 直连 api.anthropic.com 失败（网络不通或地区限制）。请在「模型 / API」中配置第三方 API（Base URL + Key），点击「应用」后「新建终端」重试。</p>
+                  <div class="term-connect-banner-actions">
+                    <button type="button" class="btn btn-accent btn-sm" id="btn-term-banner-provider" data-i18n="banner.config">去配置 API</button>
+                    <button type="button" class="btn btn-ghost btn-sm" id="btn-term-banner-import" data-i18n="banner.import">从 settings 导入</button>
+                    <button type="button" class="btn btn-ghost btn-sm" id="btn-term-banner-dismiss" data-i18n="banner.dismiss">不再提示</button>
+                  </div>
+                </div>
+                <button type="button" class="term-connect-banner-close" id="btn-term-banner-close" aria-label="关闭">×</button>
+              </div>
+              <div class="terminal-host" id="terminal-host">
+                <div class="term-clip-hint mono" id="term-clip-hint" aria-live="polite"></div>
+              </div>
+            </div>
+
+            <aside class="card side-card desktop-only" id="side-card-desktop">
+              <div class="card-header side-card-header">
+                <div class="side-card-head">
+                  <span class="side-card-head-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/></svg>
+                  </span>
+                  <div>
+                    <div class="card-title" data-i18n="cp.title">控制面板</div>
+                    <p class="side-card-desc" data-i18n="cp.desc">API · 会话 · 审计</p>
+                  </div>
+                </div>
+              </div>
+              <div class="card-body control-panel-body">
+                <details class="cp-section" open id="cp-section-model">
+                  <summary class="cp-section-summary">
+                    <span class="cp-section-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M12 3v3M8 6h8M7 9h10v10a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1V9z"/></svg></span>
+                    <span class="cp-section-title" data-i18n="cp.model">模型 / API</span>
+                    <span class="cp-section-meta">
+                      <span class="cp-section-live mono" id="provider-live-desktop" data-i18n="status.loading">加载中…</span>
+                    </span>
+                  </summary>
+                  <div class="cp-section-body">
+                    <div class="provider-switch" id="provider-switch-desktop">
+                      <div class="provider-row">
+                        <select class="select select-compact" id="select-provider" aria-label="选择提供商"></select>
+                        <button type="button" class="btn btn-accent btn-sm" id="btn-provider-apply" data-i18n="btn.apply">应用</button>
+                      </div>
+                      <div class="cp-action-grid">
+                        <button type="button" class="btn btn-ghost btn-sm" id="btn-provider-config" data-i18n="btn.config">配置</button>
+                        <button type="button" class="btn btn-ghost btn-sm" id="btn-provider-add" data-i18n="btn.add">添加</button>
+                        <button type="button" class="btn btn-ghost btn-sm" id="btn-provider-import" data-i18n="btn.import">导入</button>
+                        <button type="button" class="btn btn-ghost btn-sm" id="btn-provider-test" data-i18n="btn.testKey">测试 Key</button>
+                      </div>
+                      <label class="field field-compact">
+                        <span class="field-label" data-i18n="field.cliModel">CLI 模型</span>
+                        <select class="select select-compact" id="select-cli-model">
+                          <option value="" data-i18n="opt.cliDefault">默认（使用 settings）</option>
+                          <option value="sonnet">sonnet</option>
+                          <option value="opus">opus</option>
+                          <option value="haiku">haiku</option>
+                          <option value="fable">fable</option>
+                        </select>
+                      </label>
+                    </div>
+                  </div>
+                </details>
+
+                <details class="cp-section" open id="cp-section-launch">
+                  <summary class="cp-section-summary">
+                    <span class="cp-section-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M4 6h16M4 10h16M4 14h10"/><circle cx="18" cy="16" r="3"/></svg></span>
+                    <span class="cp-section-title" data-i18n="cp.sessions">历史会话</span>
+                    <span class="cp-section-meta">
+                      <span class="cp-section-badge mono" id="claude-session-count">—</span>
+                      <button type="button" class="cp-refresh-btn" id="btn-claude-sessions-refresh" title="刷新" aria-label="刷新历史会话"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12a8 8 0 0 1 13.5-5.7M20 12a8 8 0 0 1-13.5 5.7"/><path d="M16 5h3.5V1.5M7 19H3.5V22.5"/></svg></button>
+                    </span>
+                  </summary>
+                  <div class="cp-section-body">
+                    <div class="claude-session-list" id="claude-session-list" role="listbox" aria-label="历史会话列表"></div>
+                  </div>
+                </details>
+
+                <details class="cp-section" id="cp-section-tokens">
+                  <summary class="cp-section-summary">
+                    <span class="cp-section-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M4 19V5M4 19h16M8 15v-4M12 15V9M16 15v-2"/></svg></span>
+                    <span class="cp-section-title" data-i18n="cp.tokens">Token 用量</span>
+                    <span class="cp-section-meta">
+                      <span class="cp-section-live mono" id="token-summary-desktop">↓ 0 · 计 0</span>
+                    </span>
+                  </summary>
+                  <div class="cp-section-body cp-section-body-compact">
+                    <div class="cp-stat-grid">
+                      <div class="cp-stat-card">
+                        <span class="cp-stat-label" data-i18n="stat.in">输入 ↓</span>
+                        <span class="cp-stat-val mono" id="token-input-desktop">0</span>
+                      </div>
+                      <div class="cp-stat-card">
+                        <span class="cp-stat-label" data-i18n="stat.out">输出 ↑</span>
+                        <span class="cp-stat-val mono" id="token-output-desktop">0</span>
+                      </div>
+                      <div class="cp-stat-card cp-stat-card-accent">
+                        <span class="cp-stat-label" data-i18n="stat.total">合计</span>
+                        <span class="cp-stat-val mono" id="token-total-desktop">0</span>
+                      </div>
+                    </div>
+                    <div class="cp-action-grid cp-action-grid-2">
+                      <button type="button" class="btn btn-ghost btn-sm" id="btn-token-reset" data-i18n="btn.resetSession">重置本会话</button>
+                      <button type="button" class="btn btn-ghost btn-sm" id="btn-token-reset-billing" data-i18n="btn.resetBilling">清零累计</button>
+                    </div>
+                  </div>
+                </details>
+
+                <details class="cp-section" id="cp-section-audit">
+                  <summary class="cp-section-summary">
+                    <span class="cp-section-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M12 3l8 4v5c0 4.5-3.2 7.8-8 8.5C7.2 19.8 4 16.5 4 12V7l8-4z"/><path d="M9 12l2 2 4-4"/></svg></span>
+                    <span class="cp-section-title" data-i18n="cp.audit">操作审计</span>
+                    <span class="cp-section-meta">
+                      <span class="cp-section-badge mono" id="audit-count">—</span>
+                      <button type="button" class="cp-refresh-btn" id="btn-audit-refresh" title="刷新" aria-label="刷新审计列表"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12a8 8 0 0 1 13.5-5.7M20 12a8 8 0 0 1-13.5 5.7"/><path d="M16 5h3.5V1.5M7 19H3.5V22.5"/></svg></button>
+                    </span>
+                  </summary>
+                  <div class="cp-section-body">
+                    <div class="claude-session-list" id="audit-list" role="listbox" aria-label="操作审计列表"></div>
+                  </div>
+                </details>
+
+                <details class="cp-section" id="cp-section-env">
+                  <summary class="cp-section-summary">
+                    <span class="cp-section-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M4 6h16M7 12h10M10 18h4"/></svg></span>
+                    <span class="cp-section-title" data-i18n="cp.launch">启动选项</span>
+                  </summary>
+                  <div class="cp-section-body cp-section-body-compact">
+                    <label class="field field-compact">
+                      <span class="field-label" data-i18n="field.proxy">HTTP 代理</span>
+                      <input type="text" class="input input-compact" id="input-proxy" placeholder="http://127.0.0.1:7890" />
+                    </label>
+                    <label class="field field-compact">
+                      <span class="field-label" data-i18n="field.promptTpl">提示词模板</span>
+                      <div class="cp-prompt-pick-row">
+                        <select class="select select-compact" id="select-prompt" aria-label="选择提示词模板">
+                          <option value="" data-i18n="opt.noPrompt">不选用（手动输入）</option>
+                        </select>
+                        <button type="button" class="btn btn-ghost btn-sm" id="btn-prompt-apply" title="填入初始提示" data-i18n="btn.fill">填入</button>
+                      </div>
+                    </label>
+                    <label class="field field-compact">
+                      <span class="field-label" data-i18n="field.target">目标变量 {target}</span>
+                      <input type="text" class="input input-compact" id="input-prompt-target" placeholder="如 https://example.com（可选）" />
+                    </label>
+                    <label class="field field-compact">
+                      <span class="field-label" data-i18n="field.initPrompt">初始提示</span>
+                      <textarea class="input input-compact cp-prompt-textarea" id="input-prompt" rows="3" placeholder="启动后首条消息（可选）"></textarea>
+                    </label>
+                    <div class="cp-action-grid cp-action-grid-2">
+                      <button type="button" class="btn btn-ghost btn-sm" id="btn-prompts-open" data-i18n="btn.openPrompts">打开提示词库</button>
+                      <button type="button" class="btn btn-secondary btn-sm" id="btn-skills-open" data-i18n="btn.importSkills">导入 Skills</button>
+                    </div>
+                  </div>
+                </details>
+
+                <details class="cp-section" id="cp-section-workspace">
+                  <summary class="cp-section-summary">
+                    <span class="cp-section-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M4 7h7l2 2h7v10H4V7z"/></svg></span>
+                    <span class="cp-section-title" data-i18n="cp.workspace">工作区信息</span>
+                  </summary>
+                  <div class="cp-section-body">
+                    <pre class="code-block mono" id="config-preview" data-i18n="status.loading">加载中…</pre>
+                  </div>
+                </details>
+
+                <div class="hint-box" id="side-status"></div>
+              </div>
+            </aside>
+          </div>
+        </section>
+
+        <section class="tab-panel" id="panel-skills" data-tab="skills">
+          <div class="card skills-page-card">
+            <div class="card-header desktop-only">
+              <div class="card-title" data-i18n="panel.skills">Skills 管理</div>
+              <p class="card-desc">勾选要同步到 claude-code/.claude/skills/ 的技能包</p>
+            </div>
+            <div class="card-body">
+              <div class="skills-loaded-section">
+                <div class="skills-loaded-head">
+                  <div class="skills-loaded-title">
+                    <span class="field-label" data-i18n="field.loaded">已加载</span>
+                    <span class="skills-loaded-count mono" id="skills-loaded-count">—</span>
+                  </div>
+                  <button type="button" class="btn btn-ghost btn-sm" id="btn-skills-loaded-refresh">刷新</button>
+                </div>
+                <div class="skills-loaded-list" id="skills-loaded-list">
+                  <div class="skill-empty skills-loaded-empty">加载中…</div>
+                </div>
+              </div>
+              <div class="skills-toolbar">
+                <label class="pack-filter">
+                  <span class="field-label" data-i18n="field.skillPack">技能包</span>
+                  <select class="select" id="skills-pack-filter"></select>
+                </label>
+                <div class="btn-row skills-actions">
+                  <button type="button" class="btn btn-ghost" id="btn-skills-rec" data-i18n="skills.rec">推荐</button>
+                  <button type="button" class="btn btn-ghost" id="btn-skills-all" data-i18n="skills.all">全选</button>
+                  <button type="button" class="btn btn-ghost" id="btn-skills-none" data-i18n="skills.none">全不选</button>
+                  <button type="button" class="btn btn-accent" id="btn-skills-sync">导入</button>
+                </div>
+              </div>
+              <div class="skills-count mono" id="skills-count">已勾选 0 个 Skill</div>
+              <div class="skill-list" id="skill-list"></div>
+              <div class="hint-box" id="skills-sync-result"></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="tab-panel" id="panel-prompts" data-tab="prompts">
+          <div class="card prompts-page-card">
+            <div class="card-header">
+              <div>
+                <div class="card-title" data-i18n="panel.prompts">提示词库</div>
+                <p class="card-desc">管理扫描场景与日常提示模板，支持 {target} / {report_path} 变量 · 可在启动选项中选用</p>
+              </div>
+              <div class="btn-row">
+                <button type="button" class="btn btn-ghost btn-sm" id="btn-prompts-refresh">刷新</button>
+                <button type="button" class="btn btn-accent btn-sm" id="btn-prompts-new">新建模板</button>
+              </div>
+            </div>
+            <div class="card-body prompts-page-body">
+              <div class="prompts-toolbar">
+                <div class="prompts-kpi" id="prompts-kpi"></div>
+                <div class="prompts-filters">
+                  <input type="search" class="input input-compact" id="prompts-search" placeholder="搜索名称 / 内容…" />
+                  <select class="select select-compact" id="prompts-tag-filter" aria-label="分类筛选">
+                    <option value="">全部分类</option>
+                    <option value="scan">扫描场景</option>
+                    <option value="daily">日常助手</option>
+                    <option value="custom">自定义</option>
+                  </select>
+                </div>
+              </div>
+              <div class="prompts-layout">
+                <div class="prompts-list" id="prompts-list" role="listbox" aria-label="提示词列表"></div>
+                <div class="prompts-editor card" id="prompts-editor">
+                  <div class="prompts-editor-empty" id="prompts-editor-empty">选择左侧模板查看，或点击「新建模板」</div>
+                  <form class="prompts-editor-form" id="prompts-editor-form" hidden>
+                    <input type="hidden" id="pf-id" />
+                    <div class="prompts-editor-head">
+                      <h3 id="prompts-editor-title">编辑模板</h3>
+                      <div class="prompts-editor-badges" id="prompts-editor-badges"></div>
+                    </div>
+                    <label class="field field-compact">
+                      <span class="field-label" data-i18n="field.name">名称</span>
+                      <input type="text" class="input" id="pf-name" maxlength="80" required />
+                    </label>
+                    <label class="field field-compact">
+                      <span class="field-label">描述</span>
+                      <input type="text" class="input" id="pf-desc" maxlength="200" placeholder="用途说明（可选）" />
+                    </label>
+                    <div class="prompts-editor-row">
+                      <label class="field field-compact">
+                        <span class="field-label">分类</span>
+                        <select class="select" id="pf-tag">
+                          <option value="scan">扫描场景</option>
+                          <option value="daily">日常助手</option>
+                          <option value="custom">自定义</option>
+                        </select>
+                      </label>
+                      <label class="field field-compact prompts-enable-field">
+                        <span class="field-label">启用</span>
+                        <label class="prompts-switch">
+                          <input type="checkbox" id="pf-enabled" checked />
+                          <span>在下拉里可选</span>
+                        </label>
+                      </label>
+                    </div>
+                    <label class="field">
+                      <span class="field-label">提示词内容 · 可用 {target} {report_path}</span>
+                      <textarea class="input mono prompts-content" id="pf-content" rows="12" required></textarea>
+                    </label>
+                    <div class="prompts-preview-box" id="prompts-preview-box" hidden>
+                      <div class="field-label">渲染预览</div>
+                      <pre class="mono" id="prompts-preview-text"></pre>
+                    </div>
+                    <div class="prompts-editor-actions">
+                      <button type="button" class="btn btn-ghost btn-sm" id="btn-pf-preview">预览变量</button>
+                      <button type="button" class="btn btn-ghost btn-sm" id="btn-pf-use">填入启动提示</button>
+                      <span class="prompts-editor-spacer"></span>
+                      <button type="button" class="btn btn-ghost btn-sm" id="btn-pf-reset" hidden>恢复内置</button>
+                      <button type="button" class="btn btn-ghost btn-sm" id="btn-pf-delete" hidden>删除</button>
+                      <button type="button" class="btn btn-ghost btn-sm" id="btn-pf-cancel">取消</button>
+                      <button type="submit" class="btn btn-accent btn-sm" id="btn-pf-save">保存</button>
+                    </div>
+                    <div class="hint-box" id="prompts-editor-status"></div>
+                  </form>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="tab-panel" id="panel-fplib" data-tab="fplib">
+          <div class="lib-page lib-page-fp">
+            <div class="lib-layout">
+              <aside class="lib-side">
+                <div class="lib-side-card lib-side-mcp">
+                  <div class="lib-side-head">
+                    <h3 class="lib-side-title">MCP 接入</h3>
+                    <span class="lib-side-badge" id="fp-mcp-badge">未导入 MCP</span>
+                  </div>
+                  <div class="lib-side-kpi">
+                    <div class="lib-side-kpi-item"><span class="lib-side-kpi-val" id="fp-kpi-total">—</span><span class="lib-side-kpi-label">指纹规则</span></div>
+                    <div class="lib-side-kpi-item"><span class="lib-side-kpi-val" id="fp-kpi-cats">—</span><span class="lib-side-kpi-label">分类</span></div>
+                    <div class="lib-side-kpi-item lib-side-kpi-wide"><span class="lib-side-kpi-val lib-side-kpi-mono" id="fp-kpi-mcp">hfinger-lib</span><span class="lib-side-kpi-label">MCP 服务名</span></div>
+                  </div>
+                  <p class="lib-side-status" id="fp-mcp-status">加载中…</p>
+                  <div class="lib-side-actions">
+                    <button type="button" class="btn btn-accent btn-block" id="btn-fp-mcp-connect">一键导入指纹库 MCP</button>
+                    <button type="button" class="btn btn-ghost btn-sm btn-block" id="btn-fp-refresh">刷新状态</button>
+                  </div>
+                  <details class="lib-details">
+                    <summary>MCP 配置预览</summary>
+                    <pre class="code-block mono lib-json-preview" id="fp-mcp-preview">—</pre>
+                  </details>
+                </div>
+                <div class="lib-side-card lib-source-card">
+                  <h3 class="lib-side-title">数据来源</h3>
+                  <p class="lib-source-text">本地 HFinger 指纹 JSON，统领启动时加载到内存供搜索与 MCP 扫描。</p>
+                  <code class="lib-source-path mono" id="fp-path-line">—</code>
+                </div>
+                <div class="lib-side-card lib-help-card">
+                  <h3 class="lib-side-title">Claude 用法</h3>
+                  <ol class="lib-help-steps">
+                    <li>导入 MCP → 新建终端 → <code>/mcp</code></li>
+                    <li>先调用 <code>fingerprint_scan</code> 识别 Web 组件</li>
+                    <li>将识别结果传给 <code>nuclei_scan</code> 做定向 POC 挖掘</li>
+                  </ol>
+                </div>
+                <div class="hint-box" id="fp-status"></div>
+              </aside>
+
+              <main class="lib-main">
+                <div class="lib-main-head">
+                  <div class="lib-search-wrap">
+                    <span class="lib-search-icon" aria-hidden="true">⌕</span>
+                    <input type="search" class="input lib-search-input" id="fp-search-input" placeholder="搜索：泛微、致远、海康、Tomcat…" />
+                    <button type="button" class="btn btn-secondary btn-sm" id="btn-fp-search">搜索</button>
+                  </div>
+                  <div class="lib-filter-row" id="fp-filter-row" aria-label="分类筛选"></div>
+                </div>
+                <div class="lib-result-meta">
+                  <span class="mono" id="fp-search-count">—</span>
+                </div>
+                <div class="lib-grid" id="fp-search-list"></div>
+              </main>
+            </div>
+          </div>
+        </section>
+
+        <section class="tab-panel" id="panel-vulnlib" data-tab="vulnlib">
+          <div class="lib-page lib-page-nu">
+            <div class="lib-layout">
+              <aside class="lib-side">
+                <div class="lib-side-card lib-side-mcp">
+                  <div class="lib-side-head">
+                    <h3 class="lib-side-title">MCP 接入</h3>
+                    <span class="lib-side-badge" id="nu-mcp-badge">未导入 MCP</span>
+                  </div>
+                  <div class="lib-side-kpi">
+                    <div class="lib-side-kpi-item"><span class="lib-side-kpi-val" id="nu-kpi-total">—</span><span class="lib-side-kpi-label">已索引模板</span></div>
+                    <div class="lib-side-kpi-item"><span class="lib-side-kpi-val lib-kpi-warn" id="nu-kpi-critical">—</span><span class="lib-side-kpi-label">Critical</span></div>
+                    <div class="lib-side-kpi-item"><span class="lib-side-kpi-val lib-kpi-orange" id="nu-kpi-high">—</span><span class="lib-side-kpi-label">High</span></div>
+                    <div class="lib-side-kpi-item"><span class="lib-side-kpi-val" id="nu-kpi-yaml">—</span><span class="lib-side-kpi-label">Nuclei / Afrog</span></div>
+                  </div>
+                  <p class="lib-side-status" id="nu-mcp-status">加载中…</p>
+                  <div class="lib-side-actions">
+                    <button type="button" class="btn btn-accent btn-block" id="btn-nu-mcp-connect">一键导入漏洞库 MCP</button>
+                    <button type="button" class="btn btn-secondary btn-sm btn-block" id="btn-nu-reindex">拉取最新 POC</button>
+                    <button type="button" class="btn btn-ghost btn-sm btn-block" id="btn-nu-refresh">刷新状态</button>
+                  </div>
+                  <details class="lib-details">
+                    <summary>MCP 配置预览</summary>
+                    <pre class="code-block mono lib-json-preview" id="nu-mcp-preview">—</pre>
+                  </details>
+                </div>
+                <div class="lib-side-card lib-source-card">
+                  <h3 class="lib-side-title">数据来源与计数</h3>
+                  <p class="lib-source-text" id="nu-source-note">打开本页时自动检测 nuclei-templates、按需拉取 Afrog POC 并建索引；也可点「拉取最新 POC」手动更新。</p>
+                  <code class="lib-source-path mono" id="nu-path-line">—</code>
+                  <code class="lib-source-path mono lib-source-sub" id="nu-afrog-line">—</code>
+                  <code class="lib-source-path mono lib-source-sub" id="nu-cache-line">—</code>
+                </div>
+                <div class="lib-side-card lib-help-card">
+                  <h3 class="lib-side-title">扫描逻辑</h3>
+                  <ol class="lib-help-steps">
+                    <li>先 <code>fingerprint_scan</code> 识别 CMS / 中间件</li>
+                    <li>再 <code>nuclei_scan(target, identified_products)</code> 定向匹配 POC</li>
+                    <li>未识别组件时拒绝全量扫描；可点「拉取最新 POC」同步 GitHub</li>
+                  </ol>
+                </div>
+                <div class="hint-box" id="nu-status"></div>
+              </aside>
+
+              <main class="lib-main">
+                <div class="lib-bootstrap-panel" id="nu-bootstrap-panel" aria-live="polite">
+                  <div class="lib-bootstrap-inner">
+                    <h3 class="lib-bootstrap-title" id="nu-bootstrap-title">正在加载漏洞库</h3>
+                    <p class="lib-bootstrap-sub">首次打开将检测模板、按需拉取 Afrog POC 并建立索引</p>
+                    <ul class="lib-bootstrap-steps" id="nu-bootstrap-steps"></ul>
+                  </div>
+                </div>
+                <div class="lib-main-content" id="nu-main-content">
+                <div class="lib-main-head">
+                  <div class="lib-search-wrap">
+                    <span class="lib-search-icon" aria-hidden="true">⌕</span>
+                    <input type="search" class="input lib-search-input" id="nu-search-input" placeholder="搜索：CVE-2024、SQL、RCE、泛微…" />
+                    <button type="button" class="btn btn-secondary btn-sm" id="btn-nu-search">搜索</button>
+                  </div>
+                  <div class="lib-filter-row" id="nu-filter-row" aria-label="严重级别筛选">
+                    <button type="button" class="lib-chip active" data-sev="">全部</button>
+                    <button type="button" class="lib-chip" data-sev="critical">Critical</button>
+                    <button type="button" class="lib-chip" data-sev="high">High</button>
+                    <button type="button" class="lib-chip" data-sev="medium">Medium</button>
+                    <button type="button" class="lib-chip" data-sev="low">Low</button>
+                  </div>
+                </div>
+                <div class="lib-result-meta">
+                  <span class="mono" id="nu-search-count">—</span>
+                </div>
+                <div class="lib-grid" id="nu-search-list"></div>
+                </div>
+              </main>
+            </div>
+          </div>
+        </section>
+
+        <section class="tab-panel" id="panel-mcp" data-tab="mcp">
+          <div class="card mcp-page-card">
+            <div class="card-header desktop-only">
+              <div>
+                <div class="card-title" data-i18n="panel.mcp">MCP 连接</div>
+                <p class="card-desc">一键导入 HexStrike 工具桥到 Claude Code · 可选 Burp 集成</p>
+              </div>
+            </div>
+            <div class="card-body">
+              <div class="mcp-hexstrike-block">
+                <div class="mcp-hexstrike-head">
+                  <h3 class="mcp-section-title">HexStrike MCP</h3>
+                  <span class="mcp-badge" id="mcp-hexstrike-badge">未导入</span>
+                </div>
+                <p class="cp-tip" id="mcp-hexstrike-status">加载中…</p>
+                <p class="cp-tip mono mcp-tool-stats-line" id="mcp-tool-stats">HexStrike 工具：—</p>
+                <p class="cp-tip mono" id="mcp-server-name-line"></p>
+                <div class="mcp-hexstrike-actions">
+                  <button type="button" class="btn btn-accent btn-lg" id="btn-mcp-hexstrike">一键导入 HexStrike MCP</button>
+                  <button type="button" class="btn btn-accent btn-block btn-lg mobile-only" id="btn-mcp-hexstrike-mobile">一键导入 HexStrike MCP</button>
+                </div>
+                <div class="mcp-preview-block">
+                  <div class="mcp-preview-label">待写入配置预览</div>
+                  <pre class="code-block mono mcp-json-preview" id="mcp-hexstrike-preview">加载中…</pre>
+                </div>
+                <div class="mcp-preview-block">
+                  <div class="mcp-preview-label">当前 .mcp.json</div>
+                  <pre class="code-block mono mcp-json-preview" id="mcp-json-current">—</pre>
+                </div>
+              </div>
+
+              <div class="cp-subblock mcp-burp-block" id="burp-mcp-block">
+                <h3 class="mcp-section-title">Burp Suite MCP（可选）</h3>
+                <label class="cp-check-row">
+                  <input type="checkbox" id="chk-burp-mcp" />
+                  <span>启用 Burp MCP 集成</span>
+                </label>
+                <label class="field field-compact burp-mcp-field">
+                  <span class="field-label">Burp SSE 地址</span>
+                  <input type="text" class="input input-compact" id="input-burp-sse" placeholder="http://127.0.0.1:9876" />
+                </label>
+                <label class="field field-compact burp-mcp-field">
+                  <span class="field-label">mcp-proxy-all.jar</span>
+                  <input type="text" class="input input-compact" id="input-burp-jar" placeholder="PortSwigger MCP 扩展提供的 proxy jar 路径" />
+                </label>
+                <label class="field field-compact burp-mcp-field">
+                  <span class="field-label">Java 可执行文件</span>
+                  <input type="text" class="input input-compact" id="input-burp-java" placeholder="java（或 Burp 自带 JRE 路径）" />
+                </label>
+                <button type="button" class="btn btn-secondary btn-sm" id="btn-mcp-burp">导入 Burp MCP</button>
+                <p class="cp-tip">勾选并填写后点「导入 Burp MCP」；不影响上方 HexStrike 配置</p>
+              </div>
+
+              <div class="mcp-help-block">
+                <h3 class="mcp-section-title">使用说明</h3>
+                <ol class="mcp-steps">
+                  <li>在桌面「AI 渗透终端」确认 HexStrike Server 已启动（侧栏绿点）</li>
+                  <li>点击<strong>一键导入 HexStrike MCP</strong>，写入 Claude 工作区 <code>.mcp.json</code></li>
+                  <li>在「AI 智能体」<strong>新建终端</strong>，输入 <code>/mcp</code> 查看 HexStrike 工具</li>
+                </ol>
+              </div>
+              <div class="hint-box" id="mcp-status"></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="tab-panel" id="panel-im" data-tab="im">
+          <div class="card im-page-card">
+            <div class="card-header desktop-only">
+              <div>
+                <div class="card-title" data-i18n="panel.im">社交软件接入</div>
+                <p class="card-desc">钉钉 · Telegram · QQ — 消息自动转发 Claude Code</p>
+              </div>
+              <div class="btn-row">
+                <button type="button" class="btn btn-ghost btn-sm" id="btn-im-refresh">刷新状态</button>
+                <button type="button" class="btn btn-accent btn-sm" id="btn-im-save">保存并启动</button>
+                <button type="button" class="btn btn-ghost btn-sm" id="btn-im-stop">停止</button>
+              </div>
+            </div>
+            <div class="card-body" id="im-bridge-root">
+              <p class="im-loading">加载配置…</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="tab-panel" id="panel-reports" data-tab="reports">
+          <div class="card reports-page-card">
+            <div class="card-body">
+              <div class="reports-layout">
+                <div class="reports-preview-wrap">
+                  <div class="reports-preview-header">
+                    <label class="reports-picker">
+                      <span class="reports-picker-label">报告</span>
+                      <select class="select select-compact reports-select" id="reports-select" aria-label="选择扫描报告">
+                        <option value="">加载中…</option>
+                      </select>
+                    </label>
+                    <button type="button" class="btn btn-ghost btn-sm" id="btn-report-open-tab" hidden>新标签打开</button>
+                    <div class="reports-export-wrap" id="reports-export-wrap" hidden>
+                      <button type="button" class="btn btn-ghost btn-sm" id="btn-report-export" aria-haspopup="menu" aria-expanded="false">导出</button>
+                      <div class="reports-export-menu" id="reports-export-menu" role="menu" hidden>
+                        <button type="button" class="reports-export-item" role="menuitem" data-export-fmt="md">Markdown (.md)</button>
+                        <button type="button" class="reports-export-item" role="menuitem" data-export-fmt="pdf">PDF (.pdf)</button>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="reports-preview-body" id="reports-preview-body">
+                    <nav class="reports-outline" id="reports-outline" aria-label="报告大纲" hidden></nav>
+                    <div class="reports-outline-resizer" id="reports-outline-resizer" hidden aria-hidden="true" title="拖拽调整大纲宽度"></div>
+                    <div class="reports-preview md-body" id="reports-preview">暂无内容</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="tab-panel" id="panel-files" data-tab="files">
+          <div class="card files-page-card">
+            <div class="card-header desktop-only">
+              <div>
+                <div class="card-title" data-i18n="panel.files">文件管理</div>
+                <p class="card-desc">浏览统领项目目录（只读）· <span class="mono" id="files-root-hint">—</span></p>
+              </div>
+              <div class="btn-row">
+                <button type="button" class="btn btn-ghost btn-sm" id="btn-files-home" data-i18n="files.home">根目录</button>
+                <button type="button" class="btn btn-ghost btn-sm" id="btn-files-up" disabled data-i18n="files.up">上级</button>
+                <button type="button" class="btn btn-ghost btn-sm" id="btn-files-refresh" data-i18n="files.refresh">刷新</button>
+                <button type="button" class="btn btn-accent btn-sm" id="btn-files-download" disabled data-i18n="files.download">下载</button>
+              </div>
+            </div>
+            <div class="card-body files-body">
+              <div class="files-toolbar">
+                <nav class="files-crumbs" id="files-crumbs" aria-label="路径"></nav>
+                <span class="files-current mono" id="files-current-path">/</span>
+              </div>
+              <div class="files-layout">
+                <div class="files-list-wrap">
+                  <div class="files-list-head">
+                    <span>名称</span>
+                    <span>大小</span>
+                    <span>修改时间</span>
+                  </div>
+                  <div class="files-list" id="files-list">
+                    <div class="files-empty">加载中…</div>
+                  </div>
+                </div>
+                <div class="files-preview-wrap">
+                  <div class="files-preview-head">
+                    <span id="files-preview-title">预览</span>
+                    <button type="button" class="btn btn-ghost btn-sm" id="btn-files-close-preview" data-i18n="files.closePreview">关闭</button>
+                  </div>
+                  <pre class="files-preview mono" id="files-preview" hidden></pre>
+                  <div class="files-preview-hint" id="files-preview-hint">点击文件可预览文本；下载大文件请用「下载」</div>
+                </div>
+              </div>
+              <div class="files-status" id="files-status"></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="tab-panel" id="panel-nps" data-tab="nps">
+          <div class="card nps-page-card">
+            <div class="card-header desktop-only">
+              <div>
+                <div class="card-title"><span data-i18n="panel.nps">内网穿透</span> <span class="nps-badge idle" id="nps-run-badge">—</span></div>
+                <p class="card-desc">通过 NPS npc 将当前 Web 控制台端口映射到公网（storage/nps）</p>
+              </div>
+              <div class="btn-row">
+                <button type="button" class="btn btn-ghost btn-sm" id="btn-nps-refresh">刷新</button>
+                <button type="button" class="btn btn-ghost btn-sm" id="btn-nps-save">保存配置</button>
+                <button type="button" class="btn btn-accent btn-sm" id="btn-nps-start">启动穿透</button>
+                <button type="button" class="btn btn-ghost btn-sm" id="btn-nps-stop" disabled>停止</button>
+              </div>
+            </div>
+            <div class="card-body">
+              <div class="nps-missing-box hint-box err" id="nps-missing-box" hidden></div>
+              <div class="nps-grid">
+                <label class="field">
+                  <span class="field-label">NPS 服务端地址</span>
+                  <input type="text" class="input mono" id="nps-server-addr" placeholder="公网IP:8024 或 域名:8024" />
+                  <span class="field-hint">npc 连接地址，对应 NPS 配置 bridge_port，默认 8024</span>
+                </label>
+                <label class="field">
+                  <span class="field-label">客户端密钥 vkey</span>
+                  <input type="password" class="input mono" id="nps-vkey" placeholder="NPS Web 管理端创建的客户端密钥" autocomplete="off" />
+                </label>
+              </div>
+              <div class="nps-local-info mono">
+                <span>本地 Web 端口：<strong id="nps-local-port">—</strong></span>
+                <span>转发目标：<strong id="nps-local-target">—</strong></span>
+              </div>
+              <p class="cp-tip mono nps-cmd-preview" id="nps-cmd-preview" hidden></p>
+              <details class="nps-help" open>
+                <summary>使用说明</summary>
+                <ol class="mcp-steps">
+                  <li>在 VPS NPS <strong>Web 管理端</strong> 创建客户端，复制 <strong>vkey</strong></li>
+                  <li>在同一客户端下添加 <strong>TCP 隧道</strong>：目标 <code>127.0.0.1:当前Web端口</code>，监听端口填公网端口</li>
+                  <li>本页填写服务端地址与 vkey，点击「启动穿透」— 等价命令：<code>npc -server=IP:端口 -vkey=密钥 -type=tcp</code></li>
+                  <li>外网访问 <code>http://公网IP:监听端口/tongling/?token=…</code></li>
+                </ol>
+              </details>
+              <div class="hint-box nps-status-box" id="nps-status-box" hidden></div>
+              <div class="nps-log-wrap">
+                <div class="nps-log-label">npc 日志</div>
+                <pre class="mono nps-log" id="nps-log">（暂无日志）</pre>
+              </div>
+              <div class="btn-row mobile-only nps-mobile-actions">
+                <button type="button" class="btn btn-accent btn-block" id="btn-nps-start-m">启动穿透</button>
+                <button type="button" class="btn btn-ghost btn-block" id="btn-nps-stop-m">停止</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="tab-panel" id="panel-iframe" data-tab="iframe">
+          <div class="iframe-panel-wrap">
+            <nav class="iframe-subnav" id="tasks-subnav" hidden aria-label="任务监控子视图">
+              <button type="button" class="iframe-subnav-tab active" data-tasks-view="monitor">任务监控</button>
+              <button type="button" class="iframe-subnav-tab" data-tasks-view="sessions">扫描会话</button>
+            </nav>
+            <iframe class="hs-frame" id="hs-frame" title="HexStrike" src="about:blank"></iframe>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <!-- 手机：终端紧凑工具栏（参考 PocketShell KeyBar / 移动端终端快捷键条） -->
+    <div class="mobile-agent-bar mobile-only" id="mobile-agent-bar">
+      <div class="m-provider-bar" id="m-provider-bar" role="toolbar" aria-label="快速切换模型"></div>
+      <div class="m-keybar" role="toolbar" aria-label="终端控制">
+        <button type="button" class="m-key m-key-primary" id="m-btn-start" aria-label="新建终端">
+          <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+          <span>新建</span>
+        </button>
+        <button type="button" class="m-key" id="m-btn-stop" disabled aria-label="关闭当前终端">
+          <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M6 6h12v12H6z"/></svg>
+          <span>关闭</span>
+        </button>
+        <button type="button" class="m-key" id="m-btn-clear" aria-label="清屏">
+          <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M16 9h-2.4l-1.2-2h-4L7.4 9H5l6 10 6-10zM12 3l-1.5 3H5v2h14V6h-5.5L12 3z"/></svg>
+          <span>清屏</span>
+        </button>
+        <button type="button" class="m-key" id="m-btn-scan-dock" aria-label="扫描摘要" title="扫描摘要（攻击链 / 线索 / 工具）">
+          <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M4 4h7v7H4V4zm9 0h7v7h-7V4zM4 13h7v7H4v-7zm9 3h3v-3h2v3h3v2h-3v3h-2v-3h-3v-2z"/></svg>
+          <span>摘要</span>
+        </button>
+        <button type="button" class="m-key" id="m-btn-fullscreen" aria-label="多窗口工作台" title="多窗口工作台（Esc 退出）">
+          <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg>
+          <span>工作台</span>
+        </button>
+        <button type="button" class="m-key m-key-keys-toggle" id="m-btn-keys-toggle" aria-label="终端快捷键" title="展开/收起快捷键">⌨</button>
+      </div>
+      <div class="m-term-keys" id="m-term-keys" role="toolbar" aria-label="终端快捷键"></div>
+    </div>
+
+    <!-- 手机：底部 Tab（App 风格） -->
+    <nav class="mobile-tabbar mobile-only" id="mobile-tabbar" aria-label="主导航">
+      <button type="button" class="m-tab active" data-tab="agent" aria-label="AI 智能体">
+        <span class="m-tab-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M12 3l1.5 4.5L18 9l-4.5 1.5L12 15l-1.5-4.5L6 9l4.5-1.5L12 3z"/></svg></span><span class="m-tab-label" data-i18n="dock.agent">智能体</span>
+      </button>
+      <button type="button" class="m-tab" data-tab="tasks" aria-label="任务">
+        <span class="m-tab-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M8 10h8M8 14h5"/></svg></span><span class="m-tab-label" data-i18n="dock.tasks">任务</span>
+      </button>
+      <button type="button" class="m-tab" data-tab="tools" aria-label="工具">
+        <span class="m-tab-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L4 17l3 3 5.3-5.3a4 4 0 0 0 5.4-5.4l-2.1 2.1-3.3-3.3 2.1-2.1z"/></svg></span><span class="m-tab-label" data-i18n="dock.tools">工具</span>
+      </button>
+      <button type="button" class="m-tab" data-tab="skills" aria-label="Skills">
+        <span class="m-tab-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M12 2l2.4 4.8L20 8l-4 3.9.9 5.6L12 15.8 7.1 17.5 8 11.9 4 8l5.6-1.2L12 2z"/></svg></span><span class="m-tab-label">Skills</span>
+      </button>
+      <button type="button" class="m-tab" data-tab="more" aria-label="更多" id="m-tab-more">
+        <span class="m-tab-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M4 7h16M4 12h16M4 17h16"/></svg></span><span class="m-tab-label" data-i18n="nav.more">更多</span>
+      </button>
+    </nav>
+  </div>
+
+  <!-- 手机：控制面板底部抽屉 -->
+  <div class="sheet-backdrop hidden" id="control-backdrop"></div>
+  <div class="bottom-sheet mobile-only" id="control-sheet" aria-hidden="true">
+    <div class="sheet-handle"></div>
+    <div class="sheet-header">
+      <div class="side-card-head">
+        <span class="side-card-head-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/></svg>
+        </span>
+        <div>
+          <h3>控制面板</h3>
+          <p class="side-card-desc">API · 会话 · 审计</p>
+        </div>
+      </div>
+      <button type="button" class="sheet-close" id="control-sheet-close" aria-label="关闭">×</button>
+    </div>
+    <div class="sheet-body control-panel-body">
+      <details class="cp-section" open id="cp-section-model-sheet">
+        <summary class="cp-section-summary">
+          <span class="cp-section-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M12 3v3M8 6h8M7 9h10v10a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1V9z"/></svg></span>
+          <span class="cp-section-title" data-i18n="cp.model">模型 / API</span>
+          <span class="cp-section-meta">
+            <span class="cp-section-live mono" id="provider-live-sheet">加载中…</span>
+          </span>
+        </summary>
+        <div class="cp-section-body">
+          <div class="provider-switch" id="provider-switch-sheet">
+            <div class="provider-row">
+              <select class="select select-compact" id="select-provider-sheet" aria-label="选择提供商"></select>
+              <button type="button" class="btn btn-accent btn-sm" id="btn-provider-apply-sheet" data-i18n="btn.apply">应用</button>
+            </div>
+            <div class="cp-action-grid">
+              <button type="button" class="btn btn-ghost btn-sm" id="btn-provider-config-sheet" data-i18n="btn.config">配置</button>
+              <button type="button" class="btn btn-ghost btn-sm" id="btn-provider-add-sheet" data-i18n="btn.add">添加</button>
+              <button type="button" class="btn btn-ghost btn-sm" id="btn-provider-import-sheet" data-i18n="btn.import">导入</button>
+              <button type="button" class="btn btn-ghost btn-sm" id="btn-provider-test-sheet" data-i18n="btn.testKey">测试 Key</button>
+            </div>
+            <label class="field field-compact">
+              <span class="field-label" data-i18n="field.cliModel">CLI 模型</span>
+              <select class="select select-compact" id="select-cli-model-sheet">
+                <option value="" data-i18n="opt.cliDefault">默认（使用 settings）</option>
+                <option value="sonnet">sonnet</option>
+                <option value="opus">opus</option>
+                <option value="haiku">haiku</option>
+                <option value="fable">fable</option>
+              </select>
+            </label>
+          </div>
+        </div>
+      </details>
+
+      <details class="cp-section" open id="cp-section-launch-sheet">
+        <summary class="cp-section-summary">
+          <span class="cp-section-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M4 6h16M4 10h16M4 14h10"/><circle cx="18" cy="16" r="3"/></svg></span>
+          <span class="cp-section-title" data-i18n="cp.sessions">历史会话</span>
+          <span class="cp-section-meta">
+            <span class="cp-section-badge mono" id="claude-session-count-sheet">—</span>
+            <button type="button" class="cp-refresh-btn" id="btn-claude-sessions-refresh-sheet" title="刷新" aria-label="刷新历史会话"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12a8 8 0 0 1 13.5-5.7M20 12a8 8 0 0 1-13.5 5.7"/><path d="M16 5h3.5V1.5M7 19H3.5V22.5"/></svg></button>
+          </span>
+        </summary>
+        <div class="cp-section-body">
+          <div class="claude-session-list" id="claude-session-list-sheet" role="listbox" aria-label="历史会话列表"></div>
+        </div>
+      </details>
+
+      <details class="cp-section" id="cp-section-tokens-sheet">
+        <summary class="cp-section-summary">
+          <span class="cp-section-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M4 19V5M4 19h16M8 15v-4M12 15V9M16 15v-2"/></svg></span>
+          <span class="cp-section-title" data-i18n="cp.tokens">Token 用量</span>
+          <span class="cp-section-meta">
+            <span class="cp-section-live mono" id="token-summary-sheet">↓ 0 · 计 0</span>
+          </span>
+        </summary>
+        <div class="cp-section-body cp-section-body-compact">
+          <div class="cp-stat-grid">
+            <div class="cp-stat-card">
+              <span class="cp-stat-label" data-i18n="stat.in">输入 ↓</span>
+              <span class="cp-stat-val mono" id="token-input-sheet">0</span>
+            </div>
+            <div class="cp-stat-card">
+              <span class="cp-stat-label" data-i18n="stat.out">输出 ↑</span>
+              <span class="cp-stat-val mono" id="token-output-sheet">0</span>
+            </div>
+            <div class="cp-stat-card cp-stat-card-accent">
+              <span class="cp-stat-label" data-i18n="stat.total">合计</span>
+              <span class="cp-stat-val mono" id="token-total-sheet">0</span>
+            </div>
+          </div>
+          <div class="cp-action-grid cp-action-grid-2">
+            <button type="button" class="btn btn-ghost btn-sm btn-block" id="btn-token-reset-sheet" data-i18n="btn.resetSession">重置本会话</button>
+            <button type="button" class="btn btn-ghost btn-sm btn-block" id="btn-token-reset-billing-sheet" data-i18n="btn.resetBilling">清零累计</button>
+          </div>
+        </div>
+      </details>
+
+      <details class="cp-section" id="cp-section-audit-sheet">
+        <summary class="cp-section-summary">
+          <span class="cp-section-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M12 3l8 4v5c0 4.5-3.2 7.8-8 8.5C7.2 19.8 4 16.5 4 12V7l8-4z"/><path d="M9 12l2 2 4-4"/></svg></span>
+          <span class="cp-section-title" data-i18n="cp.audit">操作审计</span>
+          <span class="cp-section-meta">
+            <span class="cp-section-badge mono" id="audit-count-sheet">—</span>
+            <button type="button" class="cp-refresh-btn" id="btn-audit-refresh-sheet" title="刷新" aria-label="刷新审计列表"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12a8 8 0 0 1 13.5-5.7M20 12a8 8 0 0 1-13.5 5.7"/><path d="M16 5h3.5V1.5M7 19H3.5V22.5"/></svg></button>
+          </span>
+        </summary>
+        <div class="cp-section-body">
+          <div class="claude-session-list" id="audit-list-sheet" role="listbox" aria-label="操作审计列表"></div>
+        </div>
+      </details>
+
+      <details class="cp-section" id="cp-section-env-sheet">
+        <summary class="cp-section-summary">
+          <span class="cp-section-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M4 6h16M7 12h10M10 18h4"/></svg></span>
+          <span class="cp-section-title" data-i18n="cp.launch">启动选项</span>
+        </summary>
+        <div class="cp-section-body cp-section-body-compact">
+          <label class="field field-compact">
+            <span class="field-label" data-i18n="field.proxy">HTTP 代理</span>
+            <input type="text" class="input input-compact" id="input-proxy-sheet" placeholder="可选" />
+          </label>
+          <label class="field field-compact">
+            <span class="field-label" data-i18n="field.promptTpl">提示词模板</span>
+            <div class="cp-prompt-pick-row">
+              <select class="select select-compact" id="select-prompt-sheet" aria-label="选择提示词模板">
+                <option value="">不选用</option>
+              </select>
+              <button type="button" class="btn btn-ghost btn-sm" id="btn-prompt-apply-sheet" data-i18n="btn.fill">填入</button>
+            </div>
+          </label>
+          <label class="field field-compact">
+            <span class="field-label" data-i18n="field.target">目标变量 {target}</span>
+            <input type="text" class="input input-compact" id="input-prompt-target-sheet" placeholder="可选" />
+          </label>
+          <label class="field field-compact">
+            <span class="field-label" data-i18n="field.initPrompt">初始提示</span>
+            <textarea class="input input-compact cp-prompt-textarea" id="input-prompt-sheet" rows="3" placeholder="可选"></textarea>
+          </label>
+          <div class="cp-action-grid cp-action-grid-2">
+            <button type="button" class="btn btn-ghost btn-sm" id="btn-prompts-open-sheet">提示词库</button>
+            <button type="button" class="btn btn-secondary btn-sm" id="btn-skills-open-sheet" data-i18n="btn.importSkills">导入 Skills</button>
+          </div>
+        </div>
+      </details>
+
+      <div class="hint-box" id="side-status-sheet"></div>
+    </div>
+  </div>
+
+  <!-- 手机：更多功能 -->
+  <div class="sheet-backdrop hidden" id="more-backdrop"></div>
+  <div class="bottom-sheet mobile-only" id="more-sheet" aria-hidden="true">
+    <div class="sheet-handle"></div>
+    <div class="sheet-header">
+      <h3 data-i18n="more.title">更多功能</h3>
+      <button type="button" class="sheet-close" id="more-sheet-close" aria-label="关闭">×</button>
+    </div>
+    <div class="sheet-body more-grid">
+      <div class="more-theme-bar">
+        <span class="more-theme-label" data-i18n="theme.label">界面主题</span>
+        <select class="theme-select" id="theme-select-mobile" aria-label="界面主题">
+          <option value="deep" data-i18n="theme.deep">深邃</option>
+          <option value="dark" data-i18n="theme.dark">暗色</option>
+          <option value="light" data-i18n="theme.light">浅色</option>
+        </select>
+      </div>
+      <div class="more-theme-bar">
+        <span class="more-theme-label" data-i18n="lang.label">界面语言</span>
+        <button type="button" class="btn btn-ghost btn-sm lang-toggle-btn" id="btn-lang-toggle-mobile" title="Switch to English">English</button>
+      </div>
+      <label class="more-mac-term">
+        <input type="checkbox" id="toggle-mac-term-mobile" />
+        <span data-i18n="pref.macTermMobile">默认打开工作台（手机也可勾选）</span>
+      </label>
+      <button type="button" class="more-tile" data-tab="run"><span>▶</span><span data-i18n="nav.run">接口运行</span></button>
+      <button type="button" class="more-tile" data-tab="reports"><span>▤</span><span data-i18n="nav.reports">扫描报告</span></button>
+      <button type="button" class="more-tile" data-tab="scanviz"><span>◎</span><span data-i18n="nav.scanviz">扫描图谱</span></button>
+      <button type="button" class="more-tile" data-tab="skills"><span>✦</span>Skills</button>
+      <button type="button" class="more-tile" data-tab="prompts"><span>⌘</span><span data-i18n="nav.prompts">提示词库</span></button>
+      <button type="button" class="more-tile" data-tab="fplib"><span>⬢</span><span data-i18n="nav.fplib">指纹库</span></button>
+      <button type="button" class="more-tile" data-tab="vulnlib"><span>⛨</span><span data-i18n="nav.vulnlib">漏洞库</span></button>
+      <button type="button" class="more-tile" data-tab="logs"><span>▤</span><span data-i18n="nav.logs">服务日志</span></button>
+      <button type="button" class="more-tile" data-tab="mcp"><span>⬡</span><span data-i18n="nav.mcp">MCP 连接</span></button>
+      <button type="button" class="more-tile" data-tab="nps"><span>⇄</span><span data-i18n="nav.nps">内网穿透</span></button>
+      <button type="button" class="more-tile" data-tab="im"><span>⎈</span><span data-i18n="nav.im">社交接入</span></button>
+      <button type="button" class="more-tile" data-tab="settings"><span>◐</span><span data-i18n="nav.settings">设置</span></button>
+      <button type="button" class="more-tile" data-tab="help"><span>?</span><span data-i18n="nav.help">工具说明</span></button>
+    </div>
+  </div>
+
+  <!-- 指纹 / 漏洞库详情弹窗 -->
+  <div class="modal-overlay hidden" id="lib-detail-modal" aria-hidden="true">
+    <div class="modal lib-detail-modal" role="dialog" aria-labelledby="lib-detail-title">
+      <div class="modal-header">
+        <div class="lib-detail-head">
+          <span class="lib-detail-kind" id="lib-detail-kind" data-i18n="btn.detail">详情</span>
+          <h2 id="lib-detail-title">—</h2>
+          <code class="lib-detail-id mono" id="lib-detail-id"></code>
+        </div>
+        <button type="button" class="modal-close" id="lib-detail-close" aria-label="关闭">×</button>
+      </div>
+      <div class="lib-detail-body" id="lib-detail-body">
+        <p class="lib-detail-loading" data-i18n="status.loading">加载中…</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-ghost" id="lib-detail-close-btn" data-i18n="term.close">关闭</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 关于统领 -->
+  <div class="modal-overlay hidden" id="about-modal" aria-hidden="true">
+    <div class="modal about-modal" role="dialog" aria-labelledby="about-modal-title">
+      <div class="modal-header">
+        <h2 id="about-modal-title" data-i18n="about.title">关于统领</h2>
+        <button type="button" class="modal-close" id="about-modal-close" aria-label="关闭">×</button>
+      </div>
+      <div class="about-modal-body">
+        <div class="about-brand">
+          <img src="/tongling/static/favicon.png" alt="" width="48" height="48" />
+          <div>
+            <div class="about-name">统领 TongLing</div>
+            <p class="about-tagline" data-i18n="about.tagline">AI 渗透智能体 · 多窗口工作台</p>
+          </div>
+        </div>
+        <p class="about-desc" data-i18n="about.desc">本 Web 控制台对应独立开源项目 Online_Tools-AI，可在浏览器中使用终端、扫描图谱、报告与工具库等能力。</p>
+        <label class="field">
+          <span class="field-label" data-i18n="about.repoLabel">项目地址</span>
+          <a class="about-repo-link mono" id="about-repo-link" href="https://github.com/CuriousLearnerDev/Online_Tools-AI" target="_blank" rel="noopener noreferrer">https://github.com/CuriousLearnerDev/Online_Tools-AI</a>
+        </label>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-ghost" id="about-modal-copy" data-i18n="about.copy">复制地址</button>
+        <a class="btn btn-accent" id="about-modal-open" href="https://github.com/CuriousLearnerDev/Online_Tools-AI" target="_blank" rel="noopener noreferrer" data-i18n="about.open">打开 GitHub</a>
+        <button type="button" class="btn btn-ghost" id="about-modal-ok" data-i18n="tip.ok">知道了</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Provider 配置弹窗 -->
+  <div class="modal-overlay hidden" id="provider-modal" aria-hidden="true">
+    <div class="modal provider-modal" role="dialog" aria-labelledby="provider-modal-title">
+      <div class="modal-header">
+        <h2 id="provider-modal-title" data-i18n="pf.title">配置提供商</h2>
+        <button type="button" class="modal-close" id="provider-modal-close" aria-label="关闭">×</button>
+      </div>
+      <p class="modal-hint" id="provider-modal-hint" data-i18n="pf.hint">修改 API 地址、Key、模型名；保存后写入 ~/.claude/settings.json</p>
+      <input type="hidden" id="pf-id" />
+      <input type="hidden" id="pf-builtin" value="0" />
+      <label class="field">
+        <span class="field-label" data-i18n="field.name">名称</span>
+        <input type="text" class="input" id="pf-name" placeholder="如：我的 DeepSeek / 公司网关" />
+      </label>
+      <label class="field">
+        <span class="field-label" data-i18n="field.baseUrl">API 地址 (ANTHROPIC_BASE_URL)</span>
+        <input type="text" class="input mono" id="pf-base-url" placeholder="https://api.deepseek.com/anthropic" />
+      </label>
+      <label class="field">
+        <span class="field-label" data-i18n="field.apiKey">API Key (ANTHROPIC_AUTH_TOKEN)</span>
+        <div class="provider-token-row">
+          <input type="password" class="input mono" id="pf-token" placeholder="留空则保留已有 Key" autocomplete="off" />
+          <button type="button" class="btn btn-secondary btn-sm" id="provider-modal-test" data-i18n="btn.testKey">测试 Key</button>
+        </div>
+        <span class="field-hint mono" id="pf-token-hint"></span>
+        <span class="field-hint mono provider-test-result" id="pf-test-result" hidden></span>
+      </label>
+      <label class="field">
+        <span class="field-label" data-i18n="field.model">主模型 (ANTHROPIC_MODEL)</span>
+        <input type="text" class="input mono" id="pf-model" placeholder="如 deepseek-v4-pro" />
+      </label>
+      <div class="provider-model-grid">
+        <label class="field field-compact">
+          <span class="field-label" data-i18n="field.sonnet">Sonnet 别名</span>
+          <input type="text" class="input mono" id="pf-sonnet" />
+        </label>
+        <label class="field field-compact">
+          <span class="field-label" data-i18n="field.opus">Opus 别名</span>
+          <input type="text" class="input mono" id="pf-opus" />
+        </label>
+        <label class="field field-compact">
+          <span class="field-label" data-i18n="field.haiku">Haiku 别名</span>
+          <input type="text" class="input mono" id="pf-haiku" />
+        </label>
+      </div>
+      <label class="field">
+        <span class="field-label" data-i18n="field.notes">备注</span>
+        <textarea class="input provider-notes" id="pf-notes" rows="2" placeholder="可选"></textarea>
+      </label>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-ghost" id="provider-modal-cancel" data-i18n="btn.cancel">取消</button>
+        <button type="button" class="btn btn-ghost" id="provider-modal-delete" hidden data-i18n="btn.delete">删除</button>
+        <button type="button" class="btn btn-secondary" id="provider-modal-save" data-i18n="btn.save">保存</button>
+        <button type="button" class="btn btn-accent" id="provider-modal-save-apply" data-i18n="btn.saveApply">保存并应用</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Skills 弹窗 -->
+  <div class="modal-overlay hidden" id="skills-modal" aria-hidden="true">
+    <div class="modal" role="dialog" aria-labelledby="modal-title">
+      <div class="modal-header">
+        <h2 id="modal-title">选择要导入的 Skills</h2>
+        <button type="button" class="modal-close" id="skills-modal-close" aria-label="关闭">×</button>
+      </div>
+      <p class="modal-hint">勾选后同步到 claude-code/.claude/skills/，导入后请重启终端。</p>
+      <div class="skills-loaded-section skills-loaded-section-modal">
+        <div class="skills-loaded-head">
+          <div class="skills-loaded-title">
+            <span class="field-label" data-i18n="field.loaded">已加载</span>
+            <span class="skills-loaded-count mono" id="modal-skills-loaded-count">—</span>
+          </div>
+        </div>
+        <div class="skills-loaded-list" id="modal-skills-loaded-list">
+          <div class="skill-empty skills-loaded-empty">加载中…</div>
+        </div>
+      </div>
+      <div class="skills-toolbar">
+        <label class="pack-filter">
+          <span class="field-label" data-i18n="field.skillPack">技能包</span>
+          <select class="select" id="modal-pack-filter"></select>
+        </label>
+        <div class="btn-row">
+          <button type="button" class="btn btn-ghost" id="modal-skills-rec">推荐</button>
+          <button type="button" class="btn btn-ghost" id="modal-skills-all">全选</button>
+          <button type="button" class="btn btn-ghost" id="modal-skills-none">全不选</button>
+        </div>
+      </div>
+      <div class="skills-count mono" id="modal-skills-count">已勾选 0 个 Skill</div>
+      <div class="skill-list modal-skill-list" id="modal-skill-list"></div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-ghost" id="skills-modal-cancel">取消</button>
+        <button type="button" class="btn btn-accent" id="skills-modal-confirm">确认导入</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/tongling/static/vendor/marked.min.js"></script>
+  <script src="/tongling/static/vendor/purify.min.js"></script>
+  <script src="/tongling/static/vendor/xterm.min.js"></script>
+  <script src="/tongling/static/vendor/xterm-addon-fit.min.js"></script>
+  <script src="/tongling/static/i18n.js"></script>
+  <script src="/tongling/static/im-bridge.js"></script>
+  <script src="/tongling/static/libraries.js"></script>
+  <script src="/tongling/static/prompts.js"></script>
+  <script src="/tongling/static/files.js"></script>
+  <script src="/tongling/static/app.js"></script>
+  <script src="/tongling/static/agent-scan-dock.js"></script>
+  <script src="/tongling/static/nps-tunnel.js"></script>
+</body>
+</html>

@@ -1,0 +1,8 @@
+__pycache__
+*.pyc
+hexstrike.log
+.hexstrike_data/
+node_modules/
+
+# Web UI build output
+ui/node_modules/

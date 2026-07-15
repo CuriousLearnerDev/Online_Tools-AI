@@ -1,0 +1,48 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+*.egg
+.eggs/
+dist/
+build/
+*.whl
+
+# 虚拟环境
+venv/
+.venv/
+env/
+hexstrike_env/
+hexstrike_envs/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# 日志
+logs/
+*.log
+
+# 运行时敏感文件
+storage/.tongling_web_token
+storage/im_bridge/
+storage/logs/
+
+# Node（AI 终端运行时）
+storage/node_ai/
+node_modules/
+
+# 系统文件
+.DS_Store
+Thumbs.db
+*.tmp
+*.bak
+
+# Docker
+Dockerfile
+.dockerignore
+docker-compose.yml
+storage/audit/

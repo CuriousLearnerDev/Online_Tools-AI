@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0d0f14" />
+  <script>
+    (function () {
+      try {
+        var t = localStorage.getItem('tongling_web_theme') || 'deep';
+        document.documentElement.setAttribute('data-theme', t);
+      } catch (e) {}
+    })();
+  </script>
+  <title>扫描图谱 · 统领</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Noto+Sans+SC:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/tongling/static/themes.css" />
+  <link rel="stylesheet" href="/tongling/static/styles.css" />
+  <link rel="stylesheet" href="/tongling/static/scan-viz.css" />
+</head>
+<body class="scan-viz-page">
+  <header class="scan-viz-header">
+    <div class="scan-viz-header-left">
+      <a class="scan-back" href="/tongling/">← 控制台</a>
+      <h1>扫描结果图谱</h1>
+    </div>
+    <div class="scan-viz-header-actions">
+      <div class="scan-layout-tabs" role="tablist" aria-label="图谱布局">
+        <button type="button" class="scan-layout-tab active" data-layout="mindmap" role="tab">思维导图</button>
+        <button type="button" class="scan-layout-tab" data-layout="swimlane" role="tab">泳道图</button>
+      </div>
+      <label class="scan-aggregate-toggle" title="同 host 下全部 curl/wget/httpx 合并为一个探测桶">
+        <input type="checkbox" id="chk-aggregate" checked /> 合并探测
+      </label>
+      <div class="scan-step-filter-tabs" role="tablist" aria-label="图谱步骤过滤">
+        <button type="button" class="scan-step-filter-tab active" data-filter="key" role="tab">关键步骤</button>
+        <button type="button" class="scan-step-filter-tab" data-filter="probes" role="tab">含探测</button>
+        <button type="button" class="scan-step-filter-tab" data-filter="all" role="tab">全部</button>
+      </div>
+      <button type="button" class="btn btn-ghost btn-sm" id="btn-refresh">刷新</button>
+      <button type="button" class="btn btn-ghost btn-sm" id="btn-fit">适应画布</button>
+    </div>
+  </header>
+
+  <div class="scan-viz-layout">
+    <aside class="scan-viz-sidebar">
+      <div class="scan-source-tabs" role="tablist" aria-label="数据来源">
+        <button type="button" class="scan-source-tab" data-source="hexstrike" role="tab">HexStrike</button>
+        <button type="button" class="scan-source-tab active" data-source="claude" role="tab">Claude 会话</button>
+      </div>
+      <div class="scan-kpi-grid" id="scan-kpis"></div>
+      <section class="scan-panel scan-risk-panel" id="scan-risk-panel">
+        <h3>风险评分</h3>
+        <div class="scan-risk-card" id="scan-risk-card">
+          <div class="scan-risk-empty">加载中…</div>
+        </div>
+      </section>
+      <section class="scan-panel">
+        <h3 id="session-panel-title">Claude 历史会话</h3>
+        <div class="scan-session-list" id="session-list"></div>
+      </section>
+      <section class="scan-panel">
+        <div class="scan-panel-head-row">
+          <h3>攻击链步骤</h3>
+          <div class="scan-playback" id="scan-playback">
+            <button type="button" class="scan-playback-btn" id="btn-replay-prev" title="上一步">‹</button>
+            <button type="button" class="scan-playback-btn primary" id="btn-replay-toggle" title="播放/暂停">▶</button>
+            <button type="button" class="scan-playback-btn" id="btn-replay-next" title="下一步">›</button>
+            <span class="scan-playback-pos mono" id="replay-pos">—</span>
+          </div>
+        </div>
+        <div class="attack-timeline" id="attack-timeline"></div>
+      </section>
+      <section class="scan-panel">
+        <h3>攻击链事实</h3>
+        <div class="scan-facts" id="scan-facts">
+          <div class="scan-empty">暂无聚合事实</div>
+        </div>
+      </section>
+      <section class="scan-panel">
+        <h3>漏洞线索</h3>
+        <div class="scan-findings-list" id="findings-list"></div>
+      </section>
+      <section class="scan-panel">
+        <h3>工具统计</h3>
+        <div class="scan-tool-bars" id="tool-bars"></div>
+      </section>
+    </aside>
+
+    <main class="scan-viz-main">
+      <div class="scan-graph-toolbar">
+        <div class="scan-graph-toolbar-left">
+          <div class="scan-session-banner" id="claude-session-banner" hidden>
+            <div class="scan-session-banner-title" id="claude-session-title"></div>
+            <div class="scan-session-banner-meta" id="claude-session-meta"></div>
+          </div>
+          <span class="scan-legend">
+            <i class="leg target"></i>目标
+            <i class="leg recon"></i>Recon 侦察
+            <i class="leg vuln"></i>Scan 扫描
+            <i class="leg exploit"></i>Exploit 利用
+            <i class="leg action"></i>其他
+          </span>
+        </div>
+        <span class="mono scan-graph-hint" id="graph-hint">加载中…</span>
+      </div>
+      <div class="scan-graph-wrap" id="graph-wrap">
+        <svg id="graph-svg" xmlns="http://www.w3.org/2000/svg"></svg>
+        <div class="scan-minimap" id="graph-minimap" hidden>
+          <canvas id="minimap-canvas" width="160" height="100"></canvas>
+          <div class="scan-minimap-viewport" id="minimap-viewport"></div>
+        </div>
+      </div>
+      <div class="scan-detail-panel" id="detail-panel" hidden>
+        <button type="button" class="scan-detail-close" id="detail-close">×</button>
+        <div class="scan-detail-head">
+          <h4 id="detail-title">节点详情</h4>
+          <span class="scan-detail-phase" id="detail-phase-badge"></span>
+        </div>
+        <div class="scan-detail-tabs" role="tablist">
+          <button type="button" class="scan-detail-tab active" data-tab="summary">摘要</button>
+          <button type="button" class="scan-detail-tab" data-tab="output">工具输出</button>
+          <button type="button" class="scan-detail-tab" data-tab="terminal">终端上下文</button>
+        </div>
+        <div class="scan-detail-pane active" id="detail-pane-summary">
+          <div class="scan-detail-claude-meta" id="detail-claude-meta" hidden></div>
+          <pre class="mono" id="detail-body"></pre>
+          <div class="scan-findings-table-wrap" id="detail-findings-wrap" hidden>
+            <table class="scan-findings-table">
+              <thead><tr><th>级别</th><th>CVE</th><th>描述</th></tr></thead>
+              <tbody id="detail-findings-table"></tbody>
+            </table>
+          </div>
+          <ul class="scan-detail-findings" id="detail-findings"></ul>
+        </div>
+        <div class="scan-detail-pane" id="detail-pane-output" hidden>
+          <div class="scan-detail-output-toolbar">
+            <button type="button" class="btn btn-ghost btn-sm" id="btn-copy-output">复制输出</button>
+            <button type="button" class="btn btn-ghost btn-sm" id="btn-export-json">导出 JSON</button>
+          </div>
+          <div class="scan-output-formatted mono" id="detail-output-formatted"></div>
+          <pre class="mono scan-detail-output" id="detail-output" hidden>加载中…</pre>
+        </div>
+        <div class="scan-detail-pane" id="detail-pane-terminal" hidden>
+          <p class="scan-detail-hint" id="detail-terminal-hint">匹配 Web 终端 scrollback 中与该工具相关的片段</p>
+          <pre class="mono scan-detail-output" id="detail-terminal">暂无关联终端记录</pre>
+        </div>
+        <div class="scan-detail-actions">
+          <a class="scan-detail-link" id="detail-hs-link" href="#" target="_blank" rel="noopener" hidden>HexStrike 运行详情</a>
+          <a class="scan-detail-link" id="detail-audit-link" href="#" target="_blank" rel="noopener" hidden>审计报告</a>
+          <a class="scan-detail-link" id="detail-agent-link" href="/tongling/">在 AI 终端恢复此会话</a>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="/tongling/static/scan-viz.js"></script>
+</body>
+</html>

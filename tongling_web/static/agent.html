@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AI 智能体 · 统领 Web</title>
+  <link rel="stylesheet" href="/tongling/static/styles.css" />
+</head>
+<body>
+  <div class="layout">
+    <header class="topbar">
+      <div class="brand">AI 智能体</div>
+      <div class="meta" id="status">加载中…</div>
+    </header>
+    <main class="main">
+      <div class="nav-links">
+        <a href="/tongling/">← 控制台首页</a>
+        <a href="/">HexStrike UI</a>
+        <a href="/tongling/skills">Skills</a>
+      </div>
+
+      <div class="panel">
+        <h3>工作区状态</h3>
+        <div class="row">
+          <span class="status" id="workdir-info">—</span>
+          <button class="btn" id="btn-mcp" type="button">一键连接 MCP</button>
+        </div>
+        <p class="status" id="mcp-result"></p>
+        <p class="status">连接成功后，在 Claude Code 终端中重新启动会话，输入 <code>/mcp</code> 查看工具。</p>
+      </div>
+
+      <div class="panel">
+        <h3>MCP 配置（project .mcp.json）</h3>
+        <pre id="mcp-json">加载中…</pre>
+      </div>
+
+      <div class="panel">
+        <h3>使用说明</h3>
+        <ol style="color: var(--muted); font-size: 14px; line-height: 1.7;">
+          <li>在桌面「终端工作台」确认 HexStrike Server 已启动（绿色日志输出）。</li>
+          <li>点击上方「一键连接 MCP」写入 Claude Code 工作目录的 <code>.mcp.json</code>。</li>
+          <li>在 <a href="/tongling/skills" style="color: var(--accent)">Skills 页面</a> 同步所需技能包。</li>
+          <li>在本机 Claude Code 终端（node_ai/claude-code）启动 <code>claude</code> 进行渗透任务。</li>
+        </ol>
+      </div>
+    </main>
+  </div>
+  <script>
+    let cfg = null;
+    const statusEl = document.getElementById('status');
+    const workdirEl = document.getElementById('workdir-info');
+    const mcpJsonEl = document.getElementById('mcp-json');
+    const mcpResultEl = document.getElementById('mcp-result');
+    const btnMcp = document.getElementById('btn-mcp');
+
+    async function loadConfig() {
+      const r = await fetch('/tongling/api/config');
+      cfg = await r.json();
+      const hs = cfg.hexstrike_healthy ? 'HexStrike 在线' : 'HexStrike 未就绪';
+      statusEl.textContent = `API :${cfg.api_port} · ${hs}`;
+      statusEl.className = 'meta ' + (cfg.hexstrike_healthy ? 'ok' : 'err');
+      workdirEl.textContent = cfg.claude_workdir_exists
+        ? `工作目录: ${cfg.claude_workdir}`
+        : `工作目录不存在: ${cfg.claude_workdir}（请先安装 AI 智能体资源包）`;
+      workdirEl.className = 'status ' + (cfg.claude_workdir_exists ? 'ok' : 'err');
+      mcpJsonEl.textContent = JSON.stringify({
+        mcpServers: { [cfg.mcp_server_name]: cfg.mcp_payload }
+      }, null, 2);
+      btnMcp.disabled = !cfg.claude_workdir_exists || !cfg.hexstrike_healthy;
+    }
+
+    btnMcp.addEventListener('click', async () => {
+      btnMcp.disabled = true;
+      mcpResultEl.textContent = '正在连接 MCP…';
+      mcpResultEl.className = 'status';
+      try {
+        const r = await fetch('/tongling/api/mcp/connect', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ profile: 'full' }),
+        });
+        const d = await r.json();
+        if (d.success) {
+          mcpResultEl.textContent = d.detail || 'MCP 已连接';
+          mcpResultEl.className = 'status ok';
+        } else {
+          mcpResultEl.textContent = d.error || '连接失败';
+          mcpResultEl.className = 'status err';
+        }
+      } catch (e) {
+        mcpResultEl.textContent = String(e);
+        mcpResultEl.className = 'status err';
+      }
+      btnMcp.disabled = false;
+      loadConfig();
+    });
+
+    loadConfig().catch(e => {
+      statusEl.textContent = '无法加载配置: ' + e;
+      statusEl.className = 'meta err';
+    });
+  </script>
+</body>
+</html>

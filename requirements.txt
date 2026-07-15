@@ -1,0 +1,16 @@
+# 统领 Web 独立运行最小依赖
+# 用法: pip install -r requirements-web.txt
+# 完整 HexStrike 扫描能力另需: pip install -r storage/hexstrike-ai-community-edition-master/requirements.txt
+
+flask>=2.3.0,<4.0.0
+simple-websocket>=1.0.0
+websockets>=12.0
+requests>=2.31.0,<3.0.0
+psutil>=5.9.0,<6.0.0
+PyYAML>=6.0
+
+# Windows Web 终端 PTY（Linux/macOS 使用 Python 标准库 pty，无需安装）
+pywinpty>=2.0.0; sys_platform == "win32"
+
+# 可选：钉钉 Stream 社交接入
+# dingtalk-stream>=0.24.0

@@ -1,0 +1,533 @@
+/**
+ * 统领 Web 界面语言（zh / en）
+ */
+(function () {
+  'use strict';
+
+  const LS_LOCALE = 'tongling_locale';
+
+  const EXTRA = {
+    zh: {
+      'nav.group.work': '工作台',
+      'nav.group.scan': '扫描',
+      'nav.group.res': '资源',
+      'nav.group.bridge': '接入',
+      'nav.group.sys': '系统',
+      'nav.more': '更多',
+      'status.disconnected': '未连接',
+      'status.loading': '加载中…',
+      'status.connected': '已连接',
+      'status.noWindow': '无打开窗口',
+      'status.selectTerm': '选择终端',
+      'term.new': '新建终端',
+      'term.close': '关闭',
+      'term.clear': '清屏',
+      'term.scan': '扫描',
+      'term.desc': 'Web 终端 · 复制 <kbd>Ctrl+Shift+C</kbd> · 粘贴 <kbd>Ctrl+Shift+V</kbd>',
+      'btn.apply': '应用',
+      'btn.config': '配置',
+      'btn.add': '添加',
+      'btn.import': '导入',
+      'btn.testKey': '测试 Key',
+      'btn.resetSession': '重置本会话',
+      'btn.resetBilling': '清零累计',
+      'btn.fill': '填入',
+      'btn.openPrompts': '打开提示词库',
+      'btn.importSkills': '导入 Skills',
+      'btn.cancel': '取消',
+      'btn.delete': '删除',
+      'btn.save': '保存',
+      'btn.saveApply': '保存并应用',
+      'btn.detail': '详情',
+      'field.cliModel': 'CLI 模型',
+      'field.proxy': 'HTTP 代理',
+      'field.promptTpl': '提示词模板',
+      'field.target': '目标变量 {target}',
+      'field.initPrompt': '初始提示',
+      'field.name': '名称',
+      'field.baseUrl': 'API 地址 (ANTHROPIC_BASE_URL)',
+      'field.apiKey': 'API Key (ANTHROPIC_AUTH_TOKEN)',
+      'field.model': '主模型 (ANTHROPIC_MODEL)',
+      'field.sonnet': 'Sonnet 别名',
+      'field.opus': 'Opus 别名',
+      'field.haiku': 'Haiku 别名',
+      'field.notes': '备注',
+      'field.loaded': '已加载',
+      'field.skillPack': '技能包',
+      'opt.cliDefault': '默认（使用 settings）',
+      'opt.noPrompt': '不选用（手动输入）',
+      'cp.sessions': '历史会话',
+      'cp.tokens': 'Token 用量',
+      'cp.audit': '操作审计',
+      'cp.launch': '启动选项',
+      'cp.workspace': '工作区信息',
+      'stat.in': '输入 ↓',
+      'stat.out': '输出 ↑',
+      'stat.total': '合计',
+      'panel.skills': 'Skills 管理',
+      'panel.prompts': '提示词库',
+      'panel.mcp': 'MCP 连接',
+      'panel.im': '社交软件接入',
+      'panel.files': '文件管理',
+      'panel.nps': '内网穿透',
+      'asd.title': '扫描摘要',
+      'asd.wait': '等待数据…',
+      'asd.facts': '攻击链事实',
+      'asd.findings': '漏洞线索',
+      'asd.tools': '工具统计',
+      'pf.title': '配置提供商',
+      'pf.hint': '修改 API 地址、Key、模型名；保存后写入 ~/.claude/settings.json',
+      'files.home': '根目录',
+      'files.up': '上级',
+      'files.refresh': '刷新',
+      'files.download': '下载',
+      'files.closePreview': '关闭',
+      'files.root': '统领根目录',
+      'files.empty': '此目录为空',
+      'files.folder': '文件夹',
+      'about.title': '关于统领',
+      'about.tagline': 'AI 渗透智能体 · 多窗口工作台',
+      'about.desc': '本 Web 控制台对应独立开源项目 Online_Tools-AI，可在浏览器中使用终端、扫描图谱、报告与工具库等能力。',
+      'about.repoLabel': '项目地址',
+      'about.copy': '复制地址',
+      'about.open': '打开 GitHub',
+      'about.copied': '项目地址已复制',
+      'skills.rec': '推荐',
+      'skills.all': '全选',
+      'skills.none': '全不选',
+      'brand.sub': 'AI 渗透控制台',
+    },
+    en: {
+      'nav.group.work': 'Workspace',
+      'nav.group.scan': 'Scan',
+      'nav.group.res': 'Resources',
+      'nav.group.bridge': 'Bridge',
+      'nav.group.sys': 'System',
+      'nav.more': 'More',
+      'status.disconnected': 'Disconnected',
+      'status.loading': 'Loading…',
+      'status.connected': 'Connected',
+      'status.noWindow': 'No open windows',
+      'status.selectTerm': 'Select terminal',
+      'term.new': 'New Terminal',
+      'term.close': 'Close',
+      'term.clear': 'Clear',
+      'term.scan': 'Scan',
+      'term.desc': 'Web terminal · Copy <kbd>Ctrl+Shift+C</kbd> · Paste <kbd>Ctrl+Shift+V</kbd>',
+      'btn.apply': 'Apply',
+      'btn.config': 'Edit',
+      'btn.add': 'Add',
+      'btn.import': 'Import',
+      'btn.testKey': 'Test Key',
+      'btn.resetSession': 'Reset session',
+      'btn.resetBilling': 'Reset totals',
+      'btn.fill': 'Fill',
+      'btn.openPrompts': 'Open prompts',
+      'btn.importSkills': 'Import Skills',
+      'btn.cancel': 'Cancel',
+      'btn.delete': 'Delete',
+      'btn.save': 'Save',
+      'btn.saveApply': 'Save & Apply',
+      'btn.detail': 'Details',
+      'field.cliModel': 'CLI model',
+      'field.proxy': 'HTTP proxy',
+      'field.promptTpl': 'Prompt template',
+      'field.target': 'Target {target}',
+      'field.initPrompt': 'Initial prompt',
+      'field.name': 'Name',
+      'field.baseUrl': 'API Base URL (ANTHROPIC_BASE_URL)',
+      'field.apiKey': 'API Key (ANTHROPIC_AUTH_TOKEN)',
+      'field.model': 'Primary model (ANTHROPIC_MODEL)',
+      'field.sonnet': 'Sonnet alias',
+      'field.opus': 'Opus alias',
+      'field.haiku': 'Haiku alias',
+      'field.notes': 'Notes',
+      'field.loaded': 'Loaded',
+      'field.skillPack': 'Skill packs',
+      'opt.cliDefault': 'Default (from settings)',
+      'opt.noPrompt': 'None (type manually)',
+      'cp.sessions': 'Sessions',
+      'cp.tokens': 'Token usage',
+      'cp.audit': 'Audit log',
+      'cp.launch': 'Launch options',
+      'cp.workspace': 'Workspace info',
+      'stat.in': 'Input ↓',
+      'stat.out': 'Output ↑',
+      'stat.total': 'Total',
+      'panel.skills': 'Skills',
+      'panel.prompts': 'Prompts',
+      'panel.mcp': 'MCP',
+      'panel.im': 'IM Bridge',
+      'panel.files': 'Files',
+      'panel.nps': 'Tunnel',
+      'asd.title': 'Scan Summary',
+      'asd.wait': 'Waiting…',
+      'asd.facts': 'Attack-chain facts',
+      'asd.findings': 'Findings',
+      'asd.tools': 'Tool stats',
+      'pf.title': 'Configure provider',
+      'pf.hint': 'Edit Base URL, Key, and model names. Saved to ~/.claude/settings.json',
+      'files.home': 'Root',
+      'files.up': 'Up',
+      'files.refresh': 'Refresh',
+      'files.download': 'Download',
+      'files.closePreview': 'Close',
+      'files.root': 'TongLing root',
+      'files.empty': 'This folder is empty',
+      'files.folder': 'Folder',
+      'about.title': 'About TongLing',
+      'about.tagline': 'AI pentest agent · Multi-window workspace',
+      'about.desc': 'This Web console is the open-source Online_Tools-AI project — terminal, scan graph, reports, and tool libraries in the browser.',
+      'about.repoLabel': 'Repository',
+      'about.copy': 'Copy URL',
+      'about.open': 'Open GitHub',
+      'about.copied': 'Repository URL copied',
+      'skills.rec': 'Recommended',
+      'skills.all': 'Select all',
+      'skills.none': 'Clear',
+      'brand.sub': 'AI Pentest Console',
+    },
+  };
+
+  const BASE = {
+    zh: {
+      'lang.name': '中文',
+      'lang.toggle': 'English',
+      'lang.label': '界面语言',
+      'status.connecting': '连接中…',
+      'theme.label': '界面主题',
+      'theme.deep': '深邃',
+      'theme.dark': '暗色',
+      'theme.light': '浅色',
+      'pref.macTerm': '默认打开工作台',
+      'pref.macTermMobile': '默认打开工作台（手机也可勾选）',
+      'nav.agent': 'AI 智能体',
+      'nav.tasks': '任务监控',
+      'nav.run': '接口运行',
+      'nav.tools': '工具目录',
+      'nav.reports': '扫描报告',
+      'nav.scanviz': '扫描图谱',
+      'nav.skills': 'Skills',
+      'nav.prompts': '提示词库',
+      'nav.fplib': '指纹库',
+      'nav.vulnlib': '漏洞库',
+      'nav.mcp': 'MCP 连接',
+      'nav.files': '文件管理',
+      'nav.im': '社交接入',
+      'nav.nps': '内网穿透',
+      'nav.logs': '服务日志',
+      'nav.settings': '设置',
+      'nav.help': '工具说明',
+      'tab.agent': 'AI 智能体',
+      'tab.control': '控制面板',
+      'tab.control.sub': 'API · 会话 · 审计',
+      'tab.tasks': '任务监控',
+      'tab.run': '接口运行',
+      'tab.tools': '工具目录',
+      'tab.reports': '扫描报告',
+      'tab.scanviz': '扫描图谱',
+      'tab.scanviz.crumb': '扫描结果图谱',
+      'tab.skills': 'Skills',
+      'tab.prompts': '提示词库',
+      'tab.fplib': '指纹库',
+      'tab.fplib.crumb': 'HFinger 指纹库',
+      'tab.vulnlib': '漏洞库',
+      'tab.vulnlib.crumb': 'Nuclei 漏洞库',
+      'tab.mcp': 'MCP 连接',
+      'tab.im': '社交接入',
+      'tab.nps': '内网穿透',
+      'tab.files': '文件管理',
+      'tab.files.sub': '统领项目目录',
+      'tab.logs': '服务日志',
+      'tab.settings': '设置',
+      'tab.help': '工具说明',
+      'tab.app': '应用',
+      'menubar.programs': '程序',
+      'menubar.window': '窗口',
+      'menubar.terminal': '终端',
+      'menubar.scan': '扫描摘要',
+      'menubar.newWin': '新建窗口',
+      'menubar.exit': '退出工作台',
+      'menubar.about': '关于统领',
+      'menubar.control': '控制面板',
+      'menubar.files': '文件管理',
+      'menubar.dock': '显示 / 隐藏程序栏',
+      'menubar.exitDesk': '退出多窗口桌面',
+      'menubar.newTerm': '新建终端窗口',
+      'menubar.cycle': '循环窗口',
+      'menubar.mem': '内存',
+      'dock.agent': '智能体',
+      'dock.control': '控制',
+      'dock.files': '文件',
+      'dock.run': '运行',
+      'dock.tasks': '任务',
+      'dock.reports': '报告',
+      'dock.scanviz': '图谱',
+      'dock.tools': '工具',
+      'dock.skills': 'Skills',
+      'dock.prompts': '提示词',
+      'dock.fplib': '指纹',
+      'dock.vulnlib': '漏洞',
+      'dock.mcp': 'MCP',
+      'dock.im': '社交',
+      'dock.nps': '穿透',
+      'dock.logs': '日志',
+      'dock.settings': '设置',
+      'dock.help': '说明',
+      'tip.desktop': '多窗口工作台：点「−」最小化 → 程序栏「智能体」或菜单「窗口」可还原；程序栏「控制」打开面板；再次点击前置程序可收起窗口。',
+      'tip.ok': '知道了',
+      'banner.title': '无法连接 Anthropic 官方 API',
+      'banner.text': 'Claude Code 直连 api.anthropic.com 失败（网络不通或地区限制）。请在「模型 / API」中配置第三方 API（Base URL + Key），点击「应用」后「新建终端」重试。',
+      'banner.config': '去配置 API',
+      'banner.import': '从 settings 导入',
+      'banner.dismiss': '不再提示',
+      'banner.hint': '无法连接 api.anthropic.com，请在「模型 / API」配置第三方 API',
+      'banner.guide': '选择或添加提供商 → 配置 Base URL 与 Key → 应用 → 新建终端',
+      'banner.termTip': '\r\n[统领] 检测到无法连接 Anthropic（api.anthropic.com）。\r\n[统领] 请打开「控制面板 → 模型 / API」配置 Base URL 与 Key，应用后新建终端重试。\r\n',
+      'cp.title': '控制面板',
+      'cp.desc': 'API · 会话 · 审计',
+      'cp.model': '模型 / API',
+      'wallpaper.sub': 'TongLing · 多窗口工作台',
+      'more.title': '更多功能',
+      'crumb.console': '← 控制台',
+      'term.workspace': '工作台',
+    },
+    en: {
+      'lang.name': 'English',
+      'lang.toggle': '中文',
+      'lang.label': 'Language',
+      'status.connecting': 'Connecting…',
+      'theme.label': 'Theme',
+      'theme.deep': 'Deep',
+      'theme.dark': 'Dark',
+      'theme.light': 'Light',
+      'pref.macTerm': 'Open workspace by default',
+      'pref.macTermMobile': 'Open workspace by default (mobile OK)',
+      'nav.agent': 'AI Agent',
+      'nav.tasks': 'Tasks',
+      'nav.run': 'API Runner',
+      'nav.tools': 'Tools',
+      'nav.reports': 'Reports',
+      'nav.scanviz': 'Scan Graph',
+      'nav.skills': 'Skills',
+      'nav.prompts': 'Prompts',
+      'nav.fplib': 'Fingerprints',
+      'nav.vulnlib': 'Vuln Library',
+      'nav.mcp': 'MCP',
+      'nav.files': 'Files',
+      'nav.im': 'IM Bridge',
+      'nav.nps': 'Tunnel',
+      'nav.logs': 'Logs',
+      'nav.settings': 'Settings',
+      'nav.help': 'Help',
+      'tab.agent': 'AI Agent',
+      'tab.control': 'Control Panel',
+      'tab.control.sub': 'API · Sessions · Audit',
+      'tab.tasks': 'Tasks',
+      'tab.run': 'API Runner',
+      'tab.tools': 'Tools',
+      'tab.reports': 'Reports',
+      'tab.scanviz': 'Scan Graph',
+      'tab.scanviz.crumb': 'Scan Result Graph',
+      'tab.skills': 'Skills',
+      'tab.prompts': 'Prompts',
+      'tab.fplib': 'Fingerprints',
+      'tab.fplib.crumb': 'HFinger Library',
+      'tab.vulnlib': 'Vuln Library',
+      'tab.vulnlib.crumb': 'Nuclei Library',
+      'tab.mcp': 'MCP',
+      'tab.im': 'IM Bridge',
+      'tab.nps': 'Tunnel',
+      'tab.files': 'Files',
+      'tab.files.sub': 'TongLing project root',
+      'tab.logs': 'Logs',
+      'tab.settings': 'Settings',
+      'tab.help': 'Help',
+      'tab.app': 'App',
+      'menubar.programs': 'Apps',
+      'menubar.window': 'Window',
+      'menubar.terminal': 'Terminal',
+      'menubar.scan': 'Scan Summary',
+      'menubar.newWin': 'New Window',
+      'menubar.exit': 'Exit Workspace',
+      'menubar.about': 'About TongLing',
+      'menubar.control': 'Control Panel',
+      'menubar.files': 'Files',
+      'menubar.dock': 'Show / Hide Dock',
+      'menubar.exitDesk': 'Exit Multi-window Desktop',
+      'menubar.newTerm': 'New Terminal',
+      'menubar.cycle': 'Cycle Windows',
+      'menubar.mem': 'MEM',
+      'dock.agent': 'Agent',
+      'dock.control': 'Control',
+      'dock.files': 'Files',
+      'dock.run': 'Run',
+      'dock.tasks': 'Tasks',
+      'dock.reports': 'Reports',
+      'dock.scanviz': 'Graph',
+      'dock.tools': 'Tools',
+      'dock.skills': 'Skills',
+      'dock.prompts': 'Prompts',
+      'dock.fplib': 'FP',
+      'dock.vulnlib': 'Vuln',
+      'dock.mcp': 'MCP',
+      'dock.im': 'IM',
+      'dock.nps': 'Tunnel',
+      'dock.logs': 'Logs',
+      'dock.settings': 'Settings',
+      'dock.help': 'Help',
+      'tip.desktop': 'Multi-window workspace: minimize with “−”, restore from Dock “Agent” or Window menu; open Control for API settings; click the front app again to hide its window.',
+      'tip.ok': 'Got it',
+      'banner.title': 'Cannot reach Anthropic API',
+      'banner.text': 'Claude Code failed to reach api.anthropic.com (network or region block). Open Model / API, set a third-party Base URL + Key, Apply, then open a new terminal.',
+      'banner.config': 'Configure API',
+      'banner.import': 'Import from settings',
+      'banner.dismiss': 'Don’t show again',
+      'banner.hint': 'Cannot reach api.anthropic.com — configure a third-party API under Model / API',
+      'banner.guide': 'Pick or add a provider → set Base URL & Key → Apply → New terminal',
+      'banner.termTip': '\r\n[TongLing] Cannot reach Anthropic (api.anthropic.com).\r\n[TongLing] Open Control Panel → Model / API, set Base URL & Key, Apply, then start a new terminal.\r\n',
+      'cp.title': 'Control Panel',
+      'cp.desc': 'API · Sessions · Audit',
+      'cp.model': 'Model / API',
+      'wallpaper.sub': 'TongLing · Multi-window Workspace',
+      'more.title': 'More',
+      'crumb.console': '← Console',
+      'term.workspace': 'Workspace',
+    },
+  };
+
+  const STRINGS = {
+    zh: Object.assign({}, BASE.zh, EXTRA.zh),
+    en: Object.assign({}, BASE.en, EXTRA.en),
+  };
+
+  function readSavedLocale() {
+    try {
+      const v = localStorage.getItem(LS_LOCALE);
+      if (v === 'en' || v === 'zh') return v;
+    } catch (e) { /* ignore */ }
+    return 'zh';
+  }
+
+  let locale = readSavedLocale();
+
+  function t(key) {
+    const pack = STRINGS[locale] || STRINGS.zh;
+    return pack[key] || STRINGS.zh[key] || key;
+  }
+
+  function tabMetaMap() {
+    return {
+      agent: { title: t('tab.agent'), sub: '' },
+      control: { title: t('tab.control'), crumbTitle: t('tab.control'), sub: t('tab.control.sub') },
+      tasks: { title: t('tab.tasks'), sub: '' },
+      run: { title: t('tab.run'), sub: '' },
+      tools: { title: t('tab.tools'), sub: '' },
+      reports: { title: t('tab.reports'), sub: '' },
+      scanviz: { title: t('tab.scanviz'), crumbTitle: t('tab.scanviz.crumb'), sub: '' },
+      skills: { title: t('tab.skills'), sub: '' },
+      prompts: { title: t('tab.prompts'), crumbTitle: t('tab.prompts'), sub: '' },
+      fplib: { title: t('tab.fplib'), crumbTitle: t('tab.fplib.crumb'), sub: '' },
+      vulnlib: { title: t('tab.vulnlib'), crumbTitle: t('tab.vulnlib.crumb'), sub: '' },
+      mcp: { title: t('tab.mcp'), sub: '' },
+      im: { title: t('tab.im'), sub: '' },
+      nps: { title: t('tab.nps'), sub: '' },
+      files: { title: t('tab.files'), crumbTitle: t('tab.files'), sub: t('tab.files.sub') },
+      logs: { title: t('tab.logs'), sub: '' },
+      settings: { title: t('tab.settings'), sub: '' },
+      help: { title: t('tab.help'), sub: '' },
+    };
+  }
+
+  const SKIP_I18N_IDS = new Set([
+    'mac-menubar-app',
+    'page-crumb-title',
+    'm-page-title',
+    'provider-live-desktop',
+    'provider-live-sheet',
+    'config-preview',
+    'asd-meta',
+    'term-status',
+    'm-term-status',
+    'global-status',
+    'm-header-status',
+  ]);
+
+  function applyDom() {
+    document.documentElement.setAttribute('lang', locale === 'en' ? 'en' : 'zh-CN');
+    document.querySelectorAll('[data-i18n]').forEach((el) => {
+      const key = el.getAttribute('data-i18n');
+      if (!key) return;
+      if (el.id && SKIP_I18N_IDS.has(el.id) && el.getAttribute('data-i18n-force') !== '1') {
+        // 动态状态文案：仅当仍是“连接中/未连接/加载中”等基准值时才覆盖
+        const cur = (el.textContent || '').trim();
+        const zhBase = STRINGS.zh[key];
+        const enBase = STRINGS.en[key];
+        if (cur && cur !== zhBase && cur !== enBase && cur !== '—' && cur !== '加载中…' && cur !== 'Loading…') {
+          return;
+        }
+      }
+      const val = t(key);
+      if (el.getAttribute('data-i18n-attr') === 'title') {
+        el.setAttribute('title', val);
+        return;
+      }
+      if (el.getAttribute('data-i18n-attr') === 'aria') {
+        el.setAttribute('aria-label', val);
+        return;
+      }
+      if (el.getAttribute('data-i18n-attr') === 'placeholder') {
+        el.setAttribute('placeholder', val);
+        return;
+      }
+      el.textContent = val;
+    });
+    document.querySelectorAll('[data-i18n-html]').forEach((el) => {
+      const key = el.getAttribute('data-i18n-html');
+      if (!key) return;
+      el.innerHTML = t(key);
+    });
+    document.querySelectorAll('[data-i18n-placeholder]').forEach((el) => {
+      const key = el.getAttribute('data-i18n-placeholder');
+      if (key) el.setAttribute('placeholder', t(key));
+    });
+    document.querySelectorAll('#btn-lang-toggle, #btn-lang-toggle-mobile, #btn-mac-lang').forEach((btn) => {
+      if (!btn) return;
+      btn.textContent = t('lang.toggle');
+      btn.title = locale === 'zh' ? 'Switch to English' : '切换到中文';
+    });
+  }
+
+  function setLocale(next, { persist = true, notify = true } = {}) {
+    locale = next === 'en' ? 'en' : 'zh';
+    if (persist) {
+      try { localStorage.setItem(LS_LOCALE, locale); } catch (e) { /* ignore */ }
+    }
+    applyDom();
+    if (notify) {
+      try {
+        window.dispatchEvent(new CustomEvent('tongling:locale', { detail: { locale } }));
+      } catch (e) { /* ignore */ }
+    }
+  }
+
+  function toggleLocale() {
+    setLocale(locale === 'zh' ? 'en' : 'zh');
+  }
+
+  window.tonglingI18n = {
+    t,
+    get locale() { return locale; },
+    setLocale,
+    toggleLocale,
+    applyDom,
+    tabMetaMap,
+    LS_LOCALE,
+  };
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => applyDom());
+  } else {
+    applyDom();
+  }
+})();

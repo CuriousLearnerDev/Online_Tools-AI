@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Skills · 统领 Web</title>
+  <link rel="stylesheet" href="/tongling/static/styles.css" />
+</head>
+<body>
+  <div class="layout">
+    <header class="topbar">
+      <div class="brand">Skills 管理</div>
+      <div class="meta" id="count">加载中…</div>
+    </header>
+    <main class="main">
+      <div class="nav-links">
+        <a href="/tongling/">← 控制台首页</a>
+        <a href="/tongling/agent">AI 智能体</a>
+      </div>
+
+      <div class="panel">
+        <div class="row">
+          <button class="btn" type="button" id="btn-select-all">全选</button>
+          <button class="btn" type="button" id="btn-select-none">取消全选</button>
+          <button class="btn green" type="button" id="btn-sync">同步到 Claude 工作区</button>
+        </div>
+        <p class="status" id="sync-result"></p>
+        <div class="skill-list" id="skill-list">加载中…</div>
+        <div class="log" id="sync-log"></div>
+      </div>
+    </main>
+  </div>
+  <script>
+    let skills = [];
+
+    function renderList() {
+      const box = document.getElementById('skill-list');
+      if (!skills.length) {
+        box.innerHTML = '<p class="status">未发现 Skill 文件，请检查 storage/Skill 目录。</p>';
+        return;
+      }
+      box.innerHTML = skills.map(s => `
+        <div class="skill-item">
+          <input type="checkbox" id="sk-${s.id}" value="${s.id}" checked />
+          <label for="sk-${s.id}">
+            <strong>${s.name || s.id}</strong>
+            <small>${s.path || ''} · ${s.pack || ''}</small>
+          </label>
+        </div>
+      `).join('');
+    }
+
+    function selectedIds() {
+      return [...document.querySelectorAll('#skill-list input:checked')].map(el => el.value);
+    }
+
+    document.getElementById('btn-select-all').onclick = () => {
+      document.querySelectorAll('#skill-list input').forEach(el => { el.checked = true; });
+    };
+    document.getElementById('btn-select-none').onclick = () => {
+      document.querySelectorAll('#skill-list input').forEach(el => { el.checked = false; });
+    };
+
+    document.getElementById('btn-sync').onclick = async () => {
+      const ids = selectedIds();
+      const resultEl = document.getElementById('sync-result');
+      const logEl = document.getElementById('sync-log');
+      if (!ids.length) {
+        resultEl.textContent = '请至少选择一个 Skill';
+        resultEl.className = 'status err';
+        return;
+      }
+      resultEl.textContent = '同步中…';
+      resultEl.className = 'status';
+      try {
+        const r = await fetch('/tongling/api/skills/sync', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ skill_ids: ids }),
+        });
+        const d = await r.json();
+        if (d.success) {
+          resultEl.textContent = `已同步 ${d.count} 个 Skills 到 ${d.workdir}`;
+          resultEl.className = 'status ok';
+        } else {
+          resultEl.textContent = d.error || '同步失败';
+          resultEl.className = 'status err';
+        }
+        logEl.textContent = (d.logs || []).join('\n');
+      } catch (e) {
+        resultEl.textContent = String(e);
+        resultEl.className = 'status err';
+      }
+    };
+
+    fetch('/tongling/api/skills')
+      .then(r => r.json())
+      .then(d => {
+        skills = d.skills || [];
+        document.getElementById('count').textContent = `${skills.length} 个 Skills`;
+        renderList();
+      })
+      .catch(e => {
+        document.getElementById('count').textContent = '加载失败';
+        document.getElementById('skill-list').innerHTML = `<p class="status err">${e}</p>`;
+      });
+  </script>
+</body>
+</html>

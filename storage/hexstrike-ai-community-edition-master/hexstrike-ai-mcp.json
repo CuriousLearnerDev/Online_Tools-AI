@@ -1,0 +1,17 @@
+{
+  "mcpServers": {
+    "hexstrike-ai": {
+      "command": "storage\\Python311",
+      "args": [
+        "storage\\hexstrike-ai-community-edition-master\\hexstrike_mcp.py",
+        "--server",
+        "http://127.0.0.1:15038",
+        "--profile", 
+        "full"
+      ],
+      "description": "HexStrike AI Community Edition - Advanced Cybersecurity Automation Platform. Turn off alwaysAllow if you dont want autonomous execution!",
+      "timeout": 300,
+      "alwaysAllow": []
+    }
+  }
+}

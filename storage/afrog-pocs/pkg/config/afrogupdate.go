@@ -1,0 +1,154 @@
+package config
+
+import (
+    "errors"
+    "fmt"
+    "io"
+    "net/http"
+    "os"
+    "path/filepath"
+    "strings"
+
+    "github.com/cavaliergopher/grab/v3"
+    "github.com/zan8in/afrog/v3/pkg/poc"
+    "github.com/zan8in/afrog/v3/pkg/utils"
+    "github.com/zan8in/gologger"
+)
+
+type AfrogUpdate struct {
+	HomeDir             string
+	CurrVersion         string
+	RemoteVersion       string
+	LastestVersion      string
+	LastestAfrogVersion string
+	IsUpdatePocs        bool
+}
+
+const (
+    upHost          = "https://gitee.com/zanbin/afrog/raw/main/pocs/v"
+    upPath          = "/afrog-pocs.zip"
+    upRemoteVersion = "/version"
+    afrogVersion    = "/afrog.version"
+)
+
+func NewAfrogUpdate(updatePoc bool) (*AfrogUpdate, error) {
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		return nil, err
+	}
+
+	u := &AfrogUpdate{HomeDir: homeDir, IsUpdatePocs: updatePoc}
+
+	curVersion, err := poc.GetPocVersionNumber()
+	if err != nil {
+		return u, errors.New("failed to retrieve the version information of afrog-poc locally")
+	}
+	u.CurrVersion = curVersion
+
+	return u, err
+}
+
+func (u *AfrogUpdate) CheckAfrogUpdate() (bool, error) {
+
+	resp, err := http.Get(upHost + upRemoteVersion)
+	if err != nil {
+		return false, errors.New("failed to retrieve the version information of afrog-poc remotely")
+	}
+	defer resp.Body.Close()
+
+	remoteVersion, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return false, errors.New("failed to retrieve the version information of afrog-poc remotely")
+	}
+
+	u.RemoteVersion = strings.TrimSpace(string(remoteVersion))
+
+	u.LastestAfrogVersion, err = getAfrogVersion()
+	if err != nil {
+		return false, err
+	}
+
+	return utils.Compare(strings.TrimSpace(string(remoteVersion)), ">", u.CurrVersion), nil
+}
+
+func getAfrogVersion() (string, error) {
+	resp, err := http.Get(upHost + afrogVersion)
+	if err != nil {
+		return "", errors.New("failed to retrieve the version information of afrog remotely")
+	}
+	defer resp.Body.Close()
+
+	afrogversion, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", errors.New("failed to retrieve the version information of afrog remotely")
+	}
+	return strings.TrimSpace(string(afrogversion)), nil
+}
+
+func (u *AfrogUpdate) AfrogUpdatePocs() (string, error) {
+	isUp, err := u.CheckAfrogUpdate()
+	if err != nil {
+		if u.IsUpdatePocs {
+			return "", fmt.Errorf("afrog-poc update failed. %s", err.Error())
+		}
+	}
+	if !isUp {
+		if u.IsUpdatePocs {
+			return "The current version of afrog-pocs is already up-to-date.", nil
+		}
+	}
+	if isUp {
+		if u.IsUpdatePocs {
+			gologger.Print().Msg("Downloading the latest version of afrog-pocs...")
+			return "", u.Download()
+		}
+	}
+	return "", err
+}
+
+func (u *AfrogUpdate) Download() error {
+    if err := os.RemoveAll(u.HomeDir + upPath); err != nil {
+        return err
+    }
+
+    resp, err := grab.Get(u.HomeDir, upHost+upPath)
+    if err != nil {
+        return fmt.Errorf("%s", err.Error())
+    }
+
+    afHome := filepath.Join(u.HomeDir, ".config", "afrog")
+    _ = os.MkdirAll(afHome, 0755)
+    _ = os.RemoveAll(filepath.Join(afHome, "pocs"))
+
+	utils.RandSleep(1000)
+
+    u.Unzip(resp.Filename)
+
+	utils.RandSleep(1000)
+
+    u.LastestVersion = u.RemoteVersion
+
+    return os.Remove(resp.Filename)
+}
+
+func (u *AfrogUpdate) Unzip(src string) error {
+    uz := utils.NewUnzip()
+    afHome := filepath.Join(u.HomeDir, ".config", "afrog")
+    if _, err := uz.Extract(src, afHome); err != nil {
+        return fmt.Errorf("afrog-poc decompression failed. %s", err.Error())
+    }
+
+    oldDir := filepath.Join(afHome, "afrog-pocs")
+    newDir := filepath.Join(afHome, "pocs")
+    if _, err := os.Stat(oldDir); err == nil {
+        _ = os.RemoveAll(newDir)
+        _ = os.Rename(oldDir, newDir)
+    }
+
+    if len(u.RemoteVersion) > 0 {
+        u.CurrVersion = u.RemoteVersion
+    }
+    gologger.Print().Msgf("Successfully installed pocs at %s\n", strings.ReplaceAll(newDir, "\\", "/"))
+
+    return nil
+}
