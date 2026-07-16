@@ -1,6 +1,6 @@
 统领 Web 独立版
 
-本项目是从 [统领工具](https://github.com/CuriousLearnerDev/Online_tools) 中分离出来的 **AI 渗透 Web 控制台**，可脱离统领桌面端单独运行
+本项目是从 [https://github.com/CuriousLearnerDev/Online_tools](https://github.com/CuriousLearnerDev/Online_tools)（可以直接点击在windows一键安装） 中分离出来的 **AI 渗透 Web 控制台**，可脱离统领桌面端单独运行
 
 在 Windows 原版基础上做了跨平台适配，目前可在 **Windows / Linux / macOS** 上正常使用
 
