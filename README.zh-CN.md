@@ -147,40 +147,6 @@
  docker-compose up -d
 ```
 
-##  安全说明
-
-首次启动将自动生成访问 Token：
-
-```
-storage/.tongling_web_token
-```
-
-访问地址：
-
-```
-http://IP:15038/tongling/?token=xxxx
-```
-
-> ⚠️ 请勿将 Token、API Key、NPS vkey 提交至公开仓库。
-
-## 📂 目录结构
-
-```
- web-standalone/
- ├── start-web.cmd              # Windows 一键启动
- ├── install-deps.cmd           # Windows 依赖安装
- ├── tongling_hexstrike_launcher.py   # 主启动入口
- ├── claude_hexstrike_bridge.py       # Claude ↔ HexStrike 桥接
- ├── requirements-web.txt       # Web 最小依赖
- ├── tongling_web/              # Web 门户（页面、API、IM 桥接）
- ├── cc_visual/                 # Claude 终端与会话
- └── storage/
-     ├── hexstrike-ai-community-edition-master/   # HexStrike CE（已内置）
-     ├── nuclei/nuclei-templates/                 # 漏洞库 Nuclei 模板（已内置）
-     ├── afrog-pocs/                              # 漏洞库 Afrog POC（已内置）
-     ├── im_bridge/             # 社交接入配置（运行时生成）
-     └── logs/                  # 运行日志
-```
 
 ## 📚工具界面
 
@@ -219,6 +185,40 @@ http://IP:15038/tongling/?token=xxxx
 ![img](https://zssnp-1301606049.cos.ap-nanjing.myqcloud.com/img/image-20260713113029751.png)
 
 
+##  安全说明
+
+首次启动将自动生成访问 Token：
+
+```
+storage/.tongling_web_token
+```
+
+访问地址：
+
+```
+http://IP:15038/tongling/?token=xxxx
+```
+
+> ⚠️ 请勿将 Token、API Key、NPS vkey 提交至公开仓库。
+
+## 📂 目录结构
+
+```
+ web-standalone/
+ ├── start-web.cmd              # Windows 一键启动
+ ├── install-deps.cmd           # Windows 依赖安装
+ ├── tongling_hexstrike_launcher.py   # 主启动入口
+ ├── claude_hexstrike_bridge.py       # Claude ↔ HexStrike 桥接
+ ├── requirements-web.txt       # Web 最小依赖
+ ├── tongling_web/              # Web 门户（页面、API、IM 桥接）
+ ├── cc_visual/                 # Claude 终端与会话
+ └── storage/
+     ├── hexstrike-ai-community-edition-master/   # HexStrike CE（已内置）
+     ├── nuclei/nuclei-templates/                 # 漏洞库 Nuclei 模板（已内置）
+     ├── afrog-pocs/                              # 漏洞库 Afrog POC（已内置）
+     ├── im_bridge/             # 社交接入配置（运行时生成）
+     └── logs/                  # 运行日志
+```
 
 ## 🔗 相关上游项目
 
