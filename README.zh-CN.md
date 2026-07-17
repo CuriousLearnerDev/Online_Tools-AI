@@ -152,6 +152,8 @@
 
 ### **电脑端显示：**
 
+![](https://zssnp-1301606049.cos.ap-nanjing.myqcloud.com/img/image-20260717180527883.png)
+
 ![img](https://zssnp-1301606049.cos.ap-nanjing.myqcloud.com/img/image-20260715140930749.png)
 
 ![img](https://zssnp-1301606049.cos.ap-nanjing.myqcloud.com/img/image-20260715140908177.png)
