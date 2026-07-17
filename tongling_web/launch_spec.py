@@ -45,6 +45,9 @@ def prepare_claude_spec(body: Dict[str, Any]) -> Tuple[bool, str, Optional[dict]
     if "skip_permissions" in body:
         opts.skip_permissions = _as_bool(body.get("skip_permissions"), True)
 
+    # 默认不拉 @latest；前端可传 npx_latest=true 始终拉取最新版
+    prefer_latest = _as_bool(body.get("npx_latest"), False) if "npx_latest" in body else False
+
     launch_mode = str(body.get("launch_mode") or "interactive").strip()
     if launch_mode in ("continue", "resume", "print"):
         opts.mode = launch_mode
@@ -59,6 +62,7 @@ def prepare_claude_spec(body: Dict[str, Any]) -> Tuple[bool, str, Optional[dict]
         initial_prompt=initial_prompt,
         ascii_cwd=True,
         options=opts,
+        prefer_latest=prefer_latest,
     )
     if not ok or not spec:
         return False, msg or "无法准备启动", None

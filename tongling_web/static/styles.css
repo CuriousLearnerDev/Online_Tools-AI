@@ -2457,6 +2457,75 @@ body.term-fs .mobile-agent-bar {
   white-space: nowrap;
 }
 
+.term-status.is-busy {
+  color: var(--green);
+}
+
+.btn.is-launching {
+  opacity: 0.72;
+  cursor: wait;
+}
+
+.term-launch-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 24;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(10, 12, 16, 0.78);
+  pointer-events: auto;
+}
+
+.term-launch-overlay.hidden {
+  display: none !important;
+}
+
+.term-launch-overlay-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  max-width: 320px;
+  text-align: center;
+}
+
+.term-launch-spinner {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.12);
+  border-top-color: var(--green, #00e676);
+  animation: term-launch-spin 0.75s linear infinite;
+}
+
+@keyframes term-launch-spin {
+  to { transform: rotate(360deg); }
+}
+
+.term-launch-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-h, #e6edf3);
+}
+
+.term-launch-sub {
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-dim, #8b949e);
+}
+
+body.term-fs .mac-term-stage.is-launching .term-launch-overlay {
+  z-index: 80;
+}
+
+.mac-idle-new.is-launching,
+.mac-idle-new:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
 .term-token-stats {
   font-size: 11px;
   color: var(--cyan);

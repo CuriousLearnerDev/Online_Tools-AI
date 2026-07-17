@@ -1127,6 +1127,8 @@ def api_config():
     providers_data = _providers_snapshot()
     tool_stats = _hexstrike_tool_stats() if ok else {}
     burp_status = read_burp_mcp_status(cc_dir)
+    from tongling_web.runtime_guard import runtime_security_flags
+
     return jsonify(
         {
             "success": True,
@@ -1157,6 +1159,7 @@ def api_config():
                 **burp_status,
             },
             "providers_data": providers_data,
+            **runtime_security_flags(),
         }
     )
 

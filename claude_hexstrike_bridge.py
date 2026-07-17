@@ -529,12 +529,12 @@ def _find_npx_in_dir(base: str) -> str:
 def resolve_claude_cli(cc_dir: str, node_ai_dir: str = "") -> Dict[str, Any]:
     """
     解析 Claude Code 可执行方式。
-    优先 npx @latest，其次 node_modules/.bin/claude.cmd。
+    优先 npx（默认不带 @latest），其次 node_modules/.bin/claude.cmd。
     """
     try:
         from cc_visual.claude_launcher import CLAUDE_CODE_NPM_SPEC
     except ImportError:
-        CLAUDE_CODE_NPM_SPEC = "@anthropic-ai/claude-code@latest"
+        CLAUDE_CODE_NPM_SPEC = "@anthropic-ai/claude-code"
 
     cc_dir = os.path.normpath(cc_dir or "")
     node_ai = os.path.normpath(node_ai_dir or "")
@@ -558,7 +558,7 @@ def resolve_claude_cli(cc_dir: str, node_ai_dir: str = "") -> Dict[str, Any]:
         try:
             from cc_visual.claude_launcher import build_npx_claude_argv
 
-            cli_argv = build_npx_claude_argv(npx)
+            cli_argv = build_npx_claude_argv(npx, prefer_latest=False)
         except ImportError:
             cli_argv = [npx, CLAUDE_CODE_NPM_SPEC]
     if not cli_argv:
@@ -893,12 +893,12 @@ def run_claude_mcp_cmd(
         try:
             from cc_visual.claude_launcher import CLAUDE_CODE_NPM_SPEC
         except ImportError:
-            CLAUDE_CODE_NPM_SPEC = "@anthropic-ai/claude-code@latest"
+            CLAUDE_CODE_NPM_SPEC = "@anthropic-ai/claude-code"
         if npx:
             try:
                 from cc_visual.claude_launcher import build_npx_claude_argv
 
-                cli_argv = build_npx_claude_argv(npx)
+                cli_argv = build_npx_claude_argv(npx, prefer_latest=False)
             except ImportError:
                 cli_argv = [npx, CLAUDE_CODE_NPM_SPEC]
         else:
@@ -1125,9 +1125,9 @@ def prepare_claude_launch_spec(
         try:
             from cc_visual.claude_launcher import build_npx_claude_argv
 
-            launch_argv = build_npx_claude_argv(npx)
+            launch_argv = build_npx_claude_argv(npx, prefer_latest=False)
         except ImportError:
-            launch_argv = [npx, "@anthropic-ai/claude-code@latest"]
+            launch_argv = [npx, "@anthropic-ai/claude-code"]
     if not launch_argv:
         return False, "未找到 Claude Code（请设置工作目录为 storage\\node_ai\\claude-code）", None
     if not http_proxy:

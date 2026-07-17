@@ -24,7 +24,9 @@ NODE_AI_DIR = os.path.join(_TONGLING_ROOT, "storage", "node_ai")
 CLAUDE_DIR = os.path.join(NODE_AI_DIR, "claude-code")
 ROOT_DIR = _CC_PKG
 DEFAULT_PROXY = ""
-CLAUDE_CODE_NPM_SPEC = "@anthropic-ai/claude-code@latest"
+# 默认不带 @latest，使用 npx 已缓存/已解析版本，减少意外升级导致的兼容问题
+CLAUDE_CODE_NPM_SPEC = "@anthropic-ai/claude-code"
+CLAUDE_CODE_NPM_SPEC_LATEST = "@anthropic-ai/claude-code@latest"
 # npx 拉包默认走国内镜像；可在 config.yaml 设 npm_registry，或环境变量 NPM_CONFIG_REGISTRY 覆盖
 DEFAULT_NPM_REGISTRY_CN = "https://registry.npmmirror.com"
 
@@ -107,10 +109,15 @@ def sanitize_stale_ssl_cert_env(env: dict) -> None:
         env["NPM_CONFIG_CAFILE"] = ""
 
 
-def build_npx_claude_argv(npx: str) -> List[str]:
-    """npx 启动 Claude Code，显式指定 registry 以走国内镜像。"""
+def build_npx_claude_argv(npx: str, *, prefer_latest: bool = False) -> List[str]:
+    """npx 启动 Claude Code，显式指定 registry 以走国内镜像。
+
+    prefer_latest=False（默认）→ @anthropic-ai/claude-code
+    prefer_latest=True → @anthropic-ai/claude-code@latest
+    """
     reg = resolve_npm_registry()
-    return [npx, "--registry", reg, CLAUDE_CODE_NPM_SPEC]
+    spec = CLAUDE_CODE_NPM_SPEC_LATEST if prefer_latest else CLAUDE_CODE_NPM_SPEC
+    return [npx, "--registry", reg, spec]
 
 # 内嵌终端用 subst 盘符，避免中文路径导致 TUI 框线错位
 _SUBST_CANDIDATES = ("Z:", "Y:", "X:", "W:", "V:")
@@ -220,30 +227,31 @@ def find_native_claude() -> str:
 
 
 _cli_cache: Optional[Dict[str, Any]] = None
+_cli_cache_key: Optional[Tuple[bool]] = None
 
 
-def resolve_claude_cli(*, refresh: bool = False) -> Dict[str, Any]:
+def resolve_claude_cli(*, refresh: bool = False, prefer_latest: bool = False) -> Dict[str, Any]:
     """
     解析 Claude Code 可执行方式。
-    优先：原生 claude.exe > npx @latest > 本地 node_modules/.bin。
+    优先：storage\\node_ai 的 npx > 本地 node_modules/.bin > 系统原生 claude.exe。
+    prefer_latest=True 时 npx 使用 @anthropic-ai/claude-code@latest。
     """
-    global _cli_cache
-    if _cli_cache is not None and not refresh:
+    global _cli_cache, _cli_cache_key
+    cache_key = (bool(prefer_latest),)
+    if _cli_cache is not None and not refresh and _cli_cache_key == cache_key:
         return dict(_cli_cache)
 
     cli_argv: List[str] = []
     source = ""
-
     native = find_native_claude()
-    if native:
-        cli_argv = [native]
-        source = "native"
-
     npx = _find_npx()
-    if not cli_argv and npx:
-        cli_argv = build_npx_claude_argv(npx)
-        source = "npx-latest"
 
+    # 1) 优先使用项目内 storage/node_ai 的 npx
+    if npx:
+        cli_argv = build_npx_claude_argv(npx, prefer_latest=prefer_latest)
+        source = "npx-latest" if prefer_latest else "npx"
+
+    # 2) 其次本地 npm 安装的 claude.cmd
     if not cli_argv:
         for name in ("claude.cmd", "claude.exe", "claude"):
             local = os.path.join(CLAUDE_DIR, "node_modules", ".bin", name)
@@ -251,6 +259,11 @@ def resolve_claude_cli(*, refresh: bool = False) -> Dict[str, Any]:
                 cli_argv = [local]
                 source = "npm-local"
                 break
+
+    # 3) 最后才用系统原生 / PATH 中的 claude.exe
+    if not cli_argv and native:
+        cli_argv = [native]
+        source = "native"
 
     work_dir = CLAUDE_DIR if os.path.isdir(CLAUDE_DIR) else _default_claude_cwd()
 
@@ -278,8 +291,10 @@ def resolve_claude_cli(*, refresh: bool = False) -> Dict[str, Any]:
         "version_hint": version_hint,
         "source": source,
         "native_path": native,
+        "prefer_latest": bool(prefer_latest),
     }
     _cli_cache = result
+    _cli_cache_key = cache_key
     return dict(result)
 
 
@@ -370,9 +385,10 @@ def prepare_launch(
     extra_args: Optional[List[str]] = None,
     ascii_cwd: bool = False,
     options: Optional[LaunchOptions] = None,
+    prefer_latest: bool = False,
 ) -> Tuple[bool, str, Optional[dict]]:
     """准备启动规格。ascii_cwd=True 时把中文路径 subst 到 Z:，修复内嵌 TUI 错位。"""
-    rt = resolve_claude_cli()
+    rt = resolve_claude_cli(prefer_latest=bool(prefer_latest))
 
     real_cwd = os.path.normpath(work_dir) if work_dir else _default_claude_cwd()
     if not os.path.isdir(real_cwd):
@@ -413,6 +429,11 @@ def prepare_launch(
         "env": env,
         "options": options,
         "mcp_config": mcp_config,
+        "prefer_latest": bool(prefer_latest),
+        "source": rt.get("source") or "",
+        "version_hint": rt.get("version_hint") or "",
+        "npx": rt.get("npx") or "",
+        "native_path": rt.get("native_path") or "",
         "cmdline": subprocess.list2cmdline(argv),
     }
 

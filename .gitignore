@@ -30,6 +30,7 @@ logs/
 storage/.tongling_web_token
 storage/im_bridge/
 storage/logs/
+.hexstrike_data/sessions/
 
 # Node（AI 终端运行时）
 storage/node_ai/

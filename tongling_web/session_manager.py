@@ -145,12 +145,15 @@ class TerminalSessionManager:
             return items
 
     def status(self) -> Dict[str, Any]:
+        from tongling_web.runtime_guard import runtime_security_flags
+
         sessions = self.list_sessions()
         return {
             "active": len(sessions) > 0,
             "pty_available": pty_available(),
             "sessions": sessions,
             "meta": sessions[-1] if sessions else {},
+            **runtime_security_flags(),
         }
 
     def register_listener(self, session_id: str) -> Tuple[int, str]:
@@ -231,21 +234,82 @@ class TerminalSessionManager:
             self._listeners.pop(listener_id, None)
 
     def start(self, body: Dict[str, Any]) -> Tuple[bool, str, Optional[Dict[str, Any]]]:
+        from tongling_web.launch_log import (
+            append_launch_log,
+            build_launch_log_lines,
+            enrich_spec_with_cli_meta,
+            launch_log_path,
+        )
+        from tongling_web.runtime_guard import is_running_as_root, root_terminal_block_message
+
+        if is_running_as_root():
+            detail = root_terminal_block_message()
+            lines = build_launch_log_lines(stage="root_guard", ok=False, detail=detail, body=body)
+            append_launch_log(lines)
+            return False, detail, {
+                "launch_log": lines,
+                "launch_log_file": launch_log_path(),
+                "running_as_root": True,
+            }
+
         with self._lock:
             active = sum(1 for ms in self._sessions.values() if ms.pty.running)
             if active >= MAX_SESSIONS:
-                return False, f"最多同时运行 {MAX_SESSIONS} 个终端", None
+                detail = f"最多同时运行 {MAX_SESSIONS} 个终端"
+                lines = build_launch_log_lines(stage="start", ok=False, detail=detail, body=body)
+                append_launch_log(lines)
+                return False, detail, {"launch_log": lines, "launch_log_file": launch_log_path()}
 
         ok, detail, spec = prepare_claude_spec(body)
         if not ok or not spec:
-            return False, detail or "无法准备启动", None
+            # 准备失败时仍尽量解析 CLI，方便对照「选了哪个入口」
+            try:
+                from cc_visual.claude_launcher import resolve_claude_cli
 
+                prefer_latest = bool(body.get("npx_latest"))
+                rt = resolve_claude_cli(prefer_latest=prefer_latest)
+                fallback_spec = {
+                    "prefer_latest": prefer_latest,
+                    "source": rt.get("source") or "",
+                    "version_hint": rt.get("version_hint") or "",
+                    "npx": rt.get("npx") or "",
+                    "native_path": rt.get("native_path") or "",
+                }
+            except Exception:
+                fallback_spec = spec
+            lines = build_launch_log_lines(
+                stage="prepare",
+                ok=False,
+                detail=detail or "无法准备启动",
+                body=body,
+                spec=fallback_spec,
+            )
+            append_launch_log(lines)
+            return False, detail or "无法准备启动", {
+                "launch_log": lines,
+                "launch_log_file": launch_log_path(),
+            }
+
+        enrich_spec_with_cli_meta(spec)
         sid = self._new_session_id()
         on_output, on_exit = self._make_handlers(sid)
         session = PtySession(on_output=on_output, on_exit=on_exit)
         ok2, info = session.start(spec)
         if not ok2:
-            return False, info, None
+            lines = build_launch_log_lines(
+                stage="pty",
+                ok=False,
+                detail=info,
+                body=body,
+                spec=spec,
+                session_id=sid,
+            )
+            append_launch_log(lines)
+            return False, info, {
+                "launch_log": lines,
+                "launch_log_file": launch_log_path(),
+                "cmdline": spec.get("cmdline") or "",
+            }
 
         title = f"终端 {sid[1:]}"
         workdir = spec.get("real_cwd") or spec.get("cwd") or ""
@@ -267,6 +331,16 @@ class TerminalSessionManager:
             cmdline=info,
             extra=extra or None,
         )
+        lines = build_launch_log_lines(
+            stage="started",
+            ok=True,
+            detail=info,
+            body=body,
+            spec=spec,
+            session_id=sid,
+            extra={"cmdline": info},
+        )
+        log_file = append_launch_log(lines)
         meta = {
             "session_id": sid,
             "cmdline": info,
@@ -274,6 +348,11 @@ class TerminalSessionManager:
             "started_at": time.time(),
             "title": title,
             "audit_id": audit_id,
+            "launch_log": lines,
+            "launch_log_file": log_file,
+            "cli_source": spec.get("source") or "",
+            "prefer_latest": bool(spec.get("prefer_latest")),
+            "version_hint": spec.get("version_hint") or "",
         }
         resume_id = str(body.get("resume_id") or "").strip()
         if resume_id:

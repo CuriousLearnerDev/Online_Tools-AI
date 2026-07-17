@@ -240,12 +240,28 @@ class PtySession:
                 (self._cols, self._rows),
             )
         except Exception as exc:
-            return False, f"PTY 启动失败: {exc}"
+            try:
+                import subprocess as _sp
+
+                shown = _sp.list2cmdline(list(pty_argv))
+            except Exception:
+                shown = " ".join(str(x) for x in pty_argv)
+            return False, f"PTY 启动失败: {exc} | 命令: {shown} | cwd: {cwd}"
 
         self._closed = False
         self._reader = threading.Thread(target=self._read_loop, daemon=True)
         self._reader.start()
-        return True, spec.get("cmdline") or " ".join(argv)
+        # 把实际 PTY 命令塞回 info，方便上层记日志
+        try:
+            import subprocess as _sp
+
+            pty_cmd = _sp.list2cmdline(list(pty_argv))
+        except Exception:
+            pty_cmd = " ".join(str(x) for x in pty_argv)
+        base = spec.get("cmdline") or " ".join(str(x) for x in argv)
+        if pty_cmd and pty_cmd != base:
+            return True, f"{base}  |  PTY: {pty_cmd}"
+        return True, base
 
     def write(self, data: str | bytes) -> bool:
         if self._closed or not self._pty or data is None:

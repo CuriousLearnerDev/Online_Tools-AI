@@ -24,8 +24,17 @@ def handle_terminal_message(
 
     if mtype == "start":
         ok, detail, meta = terminal_manager.start(msg)
-        if not ok or not meta:
-            send({"type": "error", "message": detail})
+        meta = meta or {}
+        if not ok:
+            send(
+                {
+                    "type": "error",
+                    "message": detail,
+                    "launch_log": meta.get("launch_log") or [],
+                    "launch_log_file": meta.get("launch_log_file") or "",
+                    "cmdline": meta.get("cmdline") or "",
+                }
+            )
             return
         sid = meta["session_id"]
         bind_session_listener(send, listener_id_holder, sid)
@@ -40,6 +49,10 @@ def handle_terminal_message(
                 "claude_session_id": meta.get("claude_session_id") or "",
                 "reattach": False,
                 "sessions": terminal_manager.list_sessions(),
+                "launch_log": meta.get("launch_log") or [],
+                "launch_log_file": meta.get("launch_log_file") or "",
+                "cli_source": meta.get("cli_source") or "",
+                "version_hint": meta.get("version_hint") or "",
             }
         )
         return
@@ -142,6 +155,9 @@ def send_ready(send: SendFn) -> None:
             "session_active": st.get("active", False),
             "sessions": st.get("sessions") or [],
             "meta": st.get("meta") or {},
+            "running_as_root": bool(st.get("running_as_root")),
+            "root_terminal_blocked": bool(st.get("root_terminal_blocked")),
+            "root_terminal_message": st.get("root_terminal_message") or "",
         }
     )
 

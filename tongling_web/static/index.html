@@ -523,6 +523,13 @@
                         <span class="field-hint" style="display:block;margin-top:2px;opacity:.7;font-size:11px;">--dangerously-skip-permissions（取消勾选后 Claude 会询问工具权限）</span>
                       </span>
                     </label>
+                    <label class="field field-compact files-hidden-toggle" style="display:flex;align-items:flex-start;gap:8px;cursor:pointer;">
+                      <input type="checkbox" id="chk-npx-latest" style="margin-top:3px;" />
+                      <span>
+                        <span data-i18n="field.npxLatest">始终拉取最新版本</span>
+                        <span class="field-hint" style="display:block;margin-top:2px;opacity:.7;font-size:11px;">勾选后使用 @anthropic-ai/claude-code@latest；默认不带 @latest，更稳定</span>
+                      </span>
+                    </label>
                     <div class="cp-action-grid cp-action-grid-2">
                       <button type="button" class="btn btn-ghost btn-sm" id="btn-prompts-open" data-i18n="btn.openPrompts">打开提示词库</button>
                       <button type="button" class="btn btn-secondary btn-sm" id="btn-skills-open" data-i18n="btn.importSkills">导入 Skills</button>
@@ -1287,6 +1294,13 @@
             <span>
               <span data-i18n="field.skipPermissions">跳过权限确认</span>
               <span class="field-hint" style="display:block;margin-top:2px;opacity:.7;font-size:11px;">取消勾选则关闭 --dangerously-skip-permissions</span>
+            </span>
+          </label>
+          <label class="field field-compact files-hidden-toggle" style="display:flex;align-items:flex-start;gap:8px;cursor:pointer;">
+            <input type="checkbox" id="chk-npx-latest-sheet" style="margin-top:3px;" />
+            <span>
+              <span data-i18n="field.npxLatest">始终拉取最新版本</span>
+              <span class="field-hint" style="display:block;margin-top:2px;opacity:.7;font-size:11px;">勾选后使用 @latest；默认更稳定</span>
             </span>
           </label>
           <div class="cp-action-grid cp-action-grid-2">

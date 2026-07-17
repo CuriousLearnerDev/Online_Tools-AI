@@ -251,6 +251,7 @@
   const LS_THEME = 'tongling_web_theme';
   const LS_SKIP_ANTHROPIC_BANNER = 'tongling_skip_anthropic_banner';
   const LS_SKIP_PERMISSIONS = 'tongling_skip_permissions';
+  const LS_NPX_LATEST = 'tongling_npx_latest';
 
   const ANTHROPIC_CONNECT_ERR_RES = [
     /Unable to connect to Anthropic services/i,
@@ -909,14 +910,75 @@
     const el = $('term-status');
     const fallback = t('status.disconnected');
     const display = text || fallback;
-    if (el) el.textContent = display;
+    if (el) {
+      el.textContent = display;
+      el.classList.toggle('is-busy', /启动|正在|连接|Loading|Starting|Resuming/i.test(display));
+    }
     const pill = $('m-term-status');
     if (!pill) return;
     pill.textContent = display;
     pill.hidden = !isMobileView() || !$('panel-agent')?.classList.contains('active');
     pill.classList.remove('running', 'error');
-    if (/运行|启动|Running|Started/i.test(display)) pill.classList.add('running');
+    if (/运行|启动|正在|连接|Loading|Running|Started/i.test(display)) pill.classList.add('running');
     else if (/错误|失败|Error|Fail/i.test(display)) pill.classList.add('error');
+  }
+
+  function isTermLaunchInFlight() {
+    return launchingNewSession
+      || pendingStartRequest
+      || (wsConnecting && wsConnectMode === 'start');
+  }
+
+  function ensureTermLaunchOverlay(host) {
+    if (!host) return null;
+    let el = host.querySelector(':scope > .term-launch-overlay');
+    if (el) return el;
+    el = document.createElement('div');
+    el.className = 'term-launch-overlay hidden';
+    el.setAttribute('role', 'status');
+    el.setAttribute('aria-live', 'polite');
+    el.innerHTML = `
+      <div class="term-launch-overlay-box">
+        <div class="term-launch-spinner" aria-hidden="true"></div>
+        <div class="term-launch-title">${escapeHtml(t('term.launchingTitle'))}</div>
+        <div class="term-launch-sub">${escapeHtml(t('term.launchingSub'))}</div>
+      </div>`;
+    host.appendChild(el);
+    return el;
+  }
+
+  function showTermLaunchOverlay(show, subtitle) {
+    const hosts = [$('terminal-host'), $('mac-term-stage')].filter(Boolean);
+    hosts.forEach((host) => {
+      const el = ensureTermLaunchOverlay(host);
+      if (!el) return;
+      el.classList.toggle('hidden', !show);
+      host.classList.toggle('is-launching', !!show);
+      if (subtitle) {
+        const sub = el.querySelector('.term-launch-sub');
+        if (sub) sub.textContent = subtitle;
+      }
+    });
+    document.querySelectorAll('.mac-idle-new').forEach((btn) => {
+      btn.disabled = !!show;
+      btn.classList.toggle('is-launching', !!show);
+    });
+  }
+
+  function beginTermLaunch(statusText, overlaySub) {
+    launchingNewSession = true;
+    pendingStartRequest = true;
+    setTermStatus(statusText || t('term.launching'));
+    setSideHint(t('term.launchingHint'), '');
+    showTermLaunchOverlay(true, overlaySub || t('term.launchingSub'));
+    updateTermButtons();
+  }
+
+  function endTermLaunch() {
+    launchingNewSession = false;
+    pendingStartRequest = false;
+    showTermLaunchOverlay(false);
+    updateTermButtons();
   }
 
   const MOBILE_TERM_KEYS = [
@@ -1078,6 +1140,33 @@
     } catch { /* ignore */ }
     const a = $('chk-skip-permissions');
     const b = $('chk-skip-permissions-sheet');
+    if (a) a.checked = on;
+    if (b) b.checked = on;
+  }
+
+  function getNpxLatest() {
+    const a = $('chk-npx-latest');
+    const b = $('chk-npx-latest-sheet');
+    if (a) return !!a.checked;
+    if (b) return !!b.checked;
+    return false;
+  }
+
+  function persistNpxLatest() {
+    try {
+      localStorage.setItem(LS_NPX_LATEST, getNpxLatest() ? '1' : '0');
+    } catch { /* ignore */ }
+  }
+
+  function restoreNpxLatest() {
+    let on = false;
+    try {
+      const v = localStorage.getItem(LS_NPX_LATEST);
+      if (v === '1') on = true;
+      else if (v === '0') on = false;
+    } catch { /* ignore */ }
+    const a = $('chk-npx-latest');
+    const b = $('chk-npx-latest-sheet');
     if (a) a.checked = on;
     if (b) b.checked = on;
   }
@@ -2191,10 +2280,20 @@
 
   function updateTermButtons() {
     const canStart = config && config.pty_available;
+    const starting = isTermLaunchInFlight();
     const running = ws && ws.readyState === WebSocket.OPEN && wsStarted && activeSessionId;
-    ['btn-term-start', 'm-btn-start', 'btn-term-new'].forEach((id) => {
+    ['btn-term-start', 'm-btn-start', 'btn-term-new', 'btn-mac-term-new'].forEach((id) => {
       const el = $(id);
-      if (el) el.disabled = !canStart;
+      if (!el) return;
+      el.disabled = !canStart || starting;
+      el.classList.toggle('is-launching', starting);
+      if (id === 'btn-term-start') {
+        el.textContent = starting ? t('term.launching') : t('term.new');
+      }
+    });
+    document.querySelectorAll('.mac-idle-new').forEach((btn) => {
+      btn.disabled = starting;
+      btn.classList.toggle('is-launching', starting);
     });
     ['btn-term-stop', 'm-btn-stop'].forEach((id) => {
       const el = $(id);
@@ -2537,6 +2636,9 @@
       setTermStatus('Web 终端不可用（缺少 winpty）');
       if ($('btn-term-start')) $('btn-term-start').disabled = true;
       if ($('m-btn-start')) $('m-btn-start').disabled = true;
+    } else if (config.running_as_root || config.root_terminal_blocked) {
+      setTermStatus(t('term.rootBlockedTitle'));
+      setSideHint(config.root_terminal_message || t('term.rootBlocked'), 'err');
     }
     if (!config.claude_workdir_exists) {
       setSideHint('Claude 工作目录不存在，请先安装 AI 智能体资源包', 'err');
@@ -4737,12 +4839,49 @@
     }
   }
 
+  /** 把后端 launch_log 行写成彩色 xterm 文本 */
+  function formatLaunchLogAnsi(lines, logFile) {
+    const rows = Array.isArray(lines) ? lines : [];
+    if (!rows.length && !logFile) return '';
+    let out = '\r\n';
+    rows.forEach((line) => {
+      const s = String(line || '');
+      if (!s.trim()) {
+        out += '\r\n';
+        return;
+      }
+      if (s.startsWith('========')) {
+        out += `\x1b[36m${s}\x1b[0m\r\n`;
+      } else if (s.startsWith('结果: 失败') || s.startsWith('详情:')) {
+        out += `\x1b[31m[启动] ${s}\x1b[0m\r\n`;
+      } else if (s.startsWith('结果: 成功')) {
+        out += `\x1b[32m[启动] ${s}\x1b[0m\r\n`;
+      } else {
+        out += `\x1b[90m[启动] ${s}\x1b[0m\r\n`;
+      }
+    });
+    if (logFile) {
+      out += `\x1b[90m[启动] 完整日志: ${logFile}\x1b[0m\r\n`;
+    }
+    return out;
+  }
+
+  function writeLaunchLogToTerm(msg, sessionId) {
+    const ansi = formatLaunchLogAnsi(msg?.launch_log, msg?.launch_log_file);
+    if (!ansi) return;
+    if (sessionId) writeTermOutputFor(sessionId, ansi);
+    else writeTermOutput(ansi);
+  }
+
   function sendWsStart() {
     if (!ws || ws.readyState !== WebSocket.OPEN) return;
     const extras = getLaunchPayloadExtras();
     const isResume = extras.launch_mode === 'resume' && extras.resume_id;
-    setTermStatus(isResume ? '正在恢复历史会话…' : '正在启动 Claude…');
+    setTermStatus(isResume ? t('term.resuming') : t('term.launching'));
     launchingNewSession = true;
+    pendingStartRequest = true;
+    showTermLaunchOverlay(true, isResume ? t('term.resumingSub') : t('term.launchingSub'));
+    updateTermButtons();
     activeSessionId = null;
     stopLiveClaudeDiscover();
     if (isResume && extras.resume_id) {
@@ -4773,6 +4912,7 @@
       initial_prompt: getPrompt(),
       workdir: config.claude_workdir,
       skip_permissions: getSkipPermissions(),
+      npx_latest: getNpxLatest(),
     };
     if (pendingScanMeta) {
       payload.scan_target = pendingScanMeta.target;
@@ -4807,8 +4947,26 @@
   }
 
   function handleWsReady(msg) {
+    if (config && typeof msg.running_as_root === 'boolean') {
+      config.running_as_root = msg.running_as_root;
+      config.root_terminal_blocked = !!msg.root_terminal_blocked;
+      config.root_terminal_message = msg.root_terminal_message || config.root_terminal_message || '';
+    }
     syncSessionsFromServer(msg.sessions);
     if (wsConnectMode === 'start' || pendingStartRequest) {
+      // root 时禁止继续发 start
+      if (config?.running_as_root || config?.root_terminal_blocked) {
+        pendingStartRequest = false;
+        endTermLaunch();
+        userStartLocked = false;
+        const blocked = (config.root_terminal_message || '').trim() || t('term.rootBlocked');
+        setTermStatus(t('term.rootBlockedTitle'));
+        setSideHint(blocked, 'err');
+        try { window.alert(blocked); } catch (e) { /* ignore */ }
+        wsConnecting = false;
+        updateTermButtons();
+        return;
+      }
       pendingStartRequest = false;
       sendWsStart();
       return;
@@ -4832,8 +4990,7 @@
   function onTerminalSessionActive(msg) {
     wsStarted = true;
     wsConnecting = false;
-    launchingNewSession = false;
-    pendingStartRequest = false;
+    endTermLaunch();
     if (msg.session_id) {
       activeSessionId = msg.session_id;
       subscribedSessions.add(msg.session_id);
@@ -4870,6 +5027,28 @@
     }
 
     setTermStatus('运行中');
+    // 启动成功：详细日志只落盘；清空启动提示，终端只留给 Claude 界面
+    if (msg.type === 'started' && !msg.reattach) {
+      const sid = msg.session_id || activeSessionId;
+      const st = sid ? ensureSessionTerm(sid) : null;
+      if (st) {
+        const kept = st.outputBuf || '';
+        if (st.outputTimer) {
+          clearTimeout(st.outputTimer);
+          st.outputTimer = 0;
+        }
+        if (st.outputRaf) {
+          cancelAnimationFrame(st.outputRaf);
+          st.outputRaf = 0;
+        }
+        try {
+          st.term.clear();
+          if (typeof st.term.reset === 'function') st.term.reset();
+        } catch (e) { /* ignore */ }
+        st.outputBuf = kept;
+        if (kept) scheduleTermOutputFlushFor(sid);
+      }
+    }
     if (msg.audit_id) {
       activeAuditId = msg.audit_id;
       setSideHint(`Claude 已启动 · 审计 ${msg.audit_id}`, 'ok');
@@ -4896,6 +5075,7 @@
   function connectWsAttempt() {
     if (!wsUrlsQueue.length || wsUrlIndex >= wsUrlsQueue.length) {
       wsConnecting = false;
+      if (wsConnectMode === 'start') endTermLaunch();
       setTermStatus('WebSocket 失败');
       const tried = wsUrlsQueue.join(' → ');
       const hint = wsPortHint(config);
@@ -4989,13 +5169,15 @@
       }
       if (msg.type === 'error') {
         wsConnecting = false;
-        launchingNewSession = false;
-        pendingStartRequest = false;
+        endTermLaunch();
         setTermStatus('错误');
-        setSideHint(msg.message || '操作失败', 'err');
+        const errHint = msg.message || '操作失败';
+        const logFile = (msg.launch_log_file || '').trim();
+        setSideHint(logFile ? `${errHint} · 日志 ${logFile}` : errHint, 'err');
         if (wsConnectMode === 'start') {
           flushTermOutput();
-          writeTermOutput('\r\n\x1b[31m[错误] ' + (msg.message || '') + '\x1b[0m\r\n');
+          writeTermOutput('\r\n\x1b[31m[错误] ' + errHint + '\x1b[0m\r\n');
+          writeLaunchLogToTerm(msg, null);
         }
         if (wsConnectMode !== 'auto') closeWs();
         else updateTermButtons();
@@ -5085,13 +5267,40 @@
   }
 
   async function connectAndStart(options = {}) {
+    if (isTermLaunchInFlight()) {
+      setTermStatus(t('term.launching'));
+      setSideHint(t('term.launchingHint'), '');
+      showTermLaunchOverlay(true, t('term.launchingSub'));
+      updateTermButtons();
+      return;
+    }
+
     userStartLocked = true;
-    pendingStartRequest = true;
+    beginTermLaunch(t('status.loading'), t('term.launchingSub'));
     if (options.fresh) wsStartResumeId = null;
 
     if (!config || config.success === false) {
-      setTermStatus('加载配置…');
+      setTermStatus(t('status.loading'));
       try { await loadConfig(); } catch (e) { /* ignore */ }
+    }
+
+    // Linux root：AI 可能做危险操作，禁止启动终端
+    if (config?.running_as_root || config?.root_terminal_blocked) {
+      endTermLaunch();
+      userStartLocked = false;
+      const msg = (config.root_terminal_message || '').trim() || t('term.rootBlocked');
+      setTermStatus(t('term.rootBlockedTitle'));
+      setSideHint(msg, 'err');
+      try { window.alert(msg); } catch (e) { /* ignore */ }
+      updateTermButtons();
+      return;
+    }
+
+    if (!config?.pty_available) {
+      endTermLaunch();
+      setTermStatus(t('status.disconnected'));
+      setSideHint('终端不可用（PTY 未就绪）', 'err');
+      return;
     }
 
     initTerminal();
@@ -5100,14 +5309,16 @@
     if (term) term.focus();
 
     if (ws?.readyState === WebSocket.OPEN) {
-      pendingStartRequest = false;
       sendWsStart();
       return;
     }
     if (ws?.readyState === WebSocket.CONNECTING) {
-      setTermStatus('连接 WebSocket…');
+      setTermStatus(t('status.connecting'));
+      showTermLaunchOverlay(true, t('term.launchingSub'));
+      updateTermButtons();
       return;
     }
+    setTermStatus(t('status.connecting'));
     connectTerminal('start');
   }
 
@@ -5620,6 +5831,7 @@
   linkInputs('input-prompt-target', 'input-prompt-target-sheet');
   linkSelects('select-prompt', 'select-prompt-sheet');
   restoreSkipPermissions();
+  restoreNpxLatest();
   const syncSkipPerm = (src, dst) => {
     if (!src || !dst) return;
     src.addEventListener('change', () => {
@@ -5629,6 +5841,15 @@
   };
   syncSkipPerm($('chk-skip-permissions'), $('chk-skip-permissions-sheet'));
   syncSkipPerm($('chk-skip-permissions-sheet'), $('chk-skip-permissions'));
+  const syncNpxLatest = (src, dst) => {
+    if (!src || !dst) return;
+    src.addEventListener('change', () => {
+      dst.checked = src.checked;
+      persistNpxLatest();
+    });
+  };
+  syncNpxLatest($('chk-npx-latest'), $('chk-npx-latest-sheet'));
+  syncNpxLatest($('chk-npx-latest-sheet'), $('chk-npx-latest'));
   $('chk-burp-mcp')?.addEventListener('change', () => {
     updateBurpMcpUi();
     persistBurpMcpPrefs();
