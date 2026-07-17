@@ -249,6 +249,10 @@
   const LS_TOKEN_BILLING = 'tongling_token_billing_v1';
   const LS_BURP_MCP = 'tongling_burp_mcp_v1';
   const LS_THEME = 'tongling_web_theme';
+  const LS_WALLPAPER = 'tongling_mac_wallpaper_v1';
+  const LS_WALLPAPER_CUSTOM = 'tongling_mac_wallpaper_custom_v1';
+  const LS_WALLPAPER_DIM = 'tongling_mac_wallpaper_dim_v1';
+  const LS_WALLPAPER_BRAND = 'tongling_mac_wallpaper_brand_v1';
   const LS_SKIP_ANTHROPIC_BANNER = 'tongling_skip_anthropic_banner';
   const LS_SKIP_PERMISSIONS = 'tongling_skip_permissions';
   const LS_NPX_LATEST = 'tongling_npx_latest';
@@ -354,6 +358,258 @@
 
   function onThemeSelectChange(themeId) {
     applyWebTheme(themeId, true);
+  }
+
+  const WALLPAPER_PRESETS = {
+    default: {
+      labelKey: 'wallpaper.default',
+      color: '#0b1218',
+      src: '/tongling/static/wallpapers/default.jpg',
+    },
+    aurora: {
+      labelKey: 'wallpaper.aurora',
+      color: '#061018',
+      src: '/tongling/static/wallpapers/aurora.jpg',
+    },
+    ocean: {
+      labelKey: 'wallpaper.ocean',
+      color: '#04101c',
+      src: '/tongling/static/wallpapers/ocean.jpg',
+    },
+    ember: {
+      labelKey: 'wallpaper.ember',
+      color: '#140a08',
+      src: '/tongling/static/wallpapers/ember.jpg',
+    },
+    mist: {
+      labelKey: 'wallpaper.mist',
+      color: '#12161c',
+      src: '/tongling/static/wallpapers/mist.jpg',
+    },
+  };
+
+  function getWallpaperId() {
+    try { return localStorage.getItem(LS_WALLPAPER) || 'default'; } catch (e) { return 'default'; }
+  }
+
+  function getWallpaperDim() {
+    try {
+      const n = Number(localStorage.getItem(LS_WALLPAPER_DIM));
+      if (Number.isFinite(n)) return Math.max(0, Math.min(70, n));
+    } catch (e) { /* ignore */ }
+    return 28;
+  }
+
+  function getWallpaperBrandOn() {
+    try {
+      const v = localStorage.getItem(LS_WALLPAPER_BRAND);
+      // 未设置或显式关闭 → 不显示「统领」大字（去掉开场动画干扰）
+      if (v === null || v === '' || v === '0') return false;
+      return v === '1';
+    } catch (e) { /* ignore */ }
+    return false;
+  }
+
+  function resolveWallpaperSrc(id) {
+    if (id === 'custom') {
+      let custom = '';
+      try { custom = localStorage.getItem(LS_WALLPAPER_CUSTOM) || ''; } catch (e) { /* ignore */ }
+      if (custom) return { color: '#0b1218', src: custom };
+      return resolveWallpaperSrc('default');
+    }
+    const preset = WALLPAPER_PRESETS[id] || WALLPAPER_PRESETS.default;
+    return { color: preset.color, src: preset.src };
+  }
+
+  function setWallpaperImgSrc(src) {
+    const img = $('mac-wallpaper-img');
+    const preview = $('wallpaper-preview-img');
+    if (img && img.getAttribute('src') !== src) {
+      // 预设走静态文件缓存；自定义才是 data URL
+      img.src = src;
+    }
+    if (preview && preview.getAttribute('src') !== src) {
+      preview.src = src;
+    }
+  }
+
+  function applyMacWallpaper(presetId, persist) {
+    let id = presetId || getWallpaperId() || 'default';
+    if (id !== 'custom' && !WALLPAPER_PRESETS[id]) id = 'default';
+    if (id === 'custom') {
+      let custom = '';
+      try { custom = localStorage.getItem(LS_WALLPAPER_CUSTOM) || ''; } catch (e) { /* ignore */ }
+      if (!custom) id = 'default';
+    }
+    const visual = resolveWallpaperSrc(id);
+    const dim = getWallpaperDim();
+    const brandOn = getWallpaperBrandOn();
+    document.documentElement.style.setProperty('--mac-wallpaper-dim', String(dim / 100));
+    const layer = $('mac-wallpaper-layer');
+    if (layer) layer.style.backgroundColor = visual.color;
+    setWallpaperImgSrc(visual.src);
+    if (persist !== false) {
+      try { localStorage.setItem(LS_WALLPAPER, id); } catch (e) { /* ignore */ }
+    }
+    syncWallpaperBrandVisibility(brandOn);
+    syncWallpaperModalUi(id, dim, brandOn);
+  }
+
+  function syncWallpaperBrandVisibility(on) {
+    const brand = $('mac-wallpaper-brand');
+    if (!brand) return;
+    if (!isTermFullscreen()) return;
+    brand.hidden = !on;
+    brand.setAttribute('aria-hidden', on ? 'false' : 'true');
+  }
+
+  function syncWallpaperModalUi(id, dim, brandOn) {
+    const preview = $('wallpaper-preview');
+    if (preview) {
+      preview.classList.toggle('brand-off', !brandOn);
+    }
+    const dimEl = $('wallpaper-dim');
+    const dimVal = $('wallpaper-dim-val');
+    if (dimEl && Number(dimEl.value) !== dim) dimEl.value = String(dim);
+    if (dimVal) dimVal.textContent = `${dim}%`;
+    const brandEl = $('wallpaper-show-brand');
+    if (brandEl) brandEl.checked = !!brandOn;
+    const grid = $('wallpaper-grid');
+    if (!grid) return;
+    grid.querySelectorAll('.wallpaper-tile').forEach((tile) => {
+      const active = tile.getAttribute('data-wallpaper-id') === id;
+      tile.classList.toggle('active', active);
+      tile.setAttribute('aria-selected', active ? 'true' : 'false');
+    });
+  }
+
+  function renderWallpaperGrid() {
+    const grid = $('wallpaper-grid');
+    if (!grid) return;
+    const cur = getWallpaperId();
+    const tiles = Object.keys(WALLPAPER_PRESETS).map((id) => {
+      const p = WALLPAPER_PRESETS[id];
+      const label = t(p.labelKey) || id;
+      const active = id === cur ? ' active' : '';
+      return `<button type="button" class="wallpaper-tile${active}" data-wallpaper-id="${id}" role="option" aria-selected="${id === cur ? 'true' : 'false'}" style="background-image:url('${p.src}')">
+        <span class="wallpaper-tile-check" aria-hidden="true">✓</span>
+        <span class="wallpaper-tile-label">${escapeHtml(label)}</span>
+      </button>`;
+    });
+    let customThumb = '';
+    try { customThumb = localStorage.getItem(LS_WALLPAPER_CUSTOM) || ''; } catch (e) { /* ignore */ }
+    const customActive = cur === 'custom' ? ' active' : '';
+    const customStyle = customThumb
+      ? `background-image:url('${customThumb}')`
+      : 'background:linear-gradient(135deg,#1a2430,#0b1218)';
+    tiles.push(`<button type="button" class="wallpaper-tile${customActive}" data-wallpaper-id="custom" role="option" aria-selected="${cur === 'custom' ? 'true' : 'false'}" style="${customStyle}">
+      <span class="wallpaper-tile-check" aria-hidden="true">✓</span>
+      <span class="wallpaper-tile-label">${escapeHtml(t('wallpaper.custom'))}</span>
+    </button>`);
+    grid.innerHTML = tiles.join('');
+    grid.querySelectorAll('.wallpaper-tile').forEach((tile) => {
+      tile.addEventListener('click', () => {
+        const id = tile.getAttribute('data-wallpaper-id');
+        if (id === 'custom') {
+          let custom = '';
+          try { custom = localStorage.getItem(LS_WALLPAPER_CUSTOM) || ''; } catch (e) { /* ignore */ }
+          if (!custom) {
+            $('wallpaper-file')?.click();
+            return;
+          }
+        }
+        applyMacWallpaper(id, true);
+      });
+    });
+  }
+
+  function openWallpaperModal() {
+    const el = $('wallpaper-modal');
+    if (!el) return;
+    renderWallpaperGrid();
+    applyMacWallpaper(getWallpaperId(), false);
+    el.classList.remove('hidden');
+    el.setAttribute('aria-hidden', 'false');
+  }
+
+  function closeWallpaperModal() {
+    const el = $('wallpaper-modal');
+    if (!el) return;
+    el.classList.add('hidden');
+    el.setAttribute('aria-hidden', 'true');
+  }
+
+  function initMacWallpaper() {
+    applyMacWallpaper(getWallpaperId(), false);
+  }
+
+  function setWallpaperDim(dim, persist) {
+    const n = Math.max(0, Math.min(70, Number(dim) || 0));
+    document.documentElement.style.setProperty('--mac-wallpaper-dim', String(n / 100));
+    if (persist !== false) {
+      try { localStorage.setItem(LS_WALLPAPER_DIM, String(n)); } catch (e) { /* ignore */ }
+    }
+    const dimVal = $('wallpaper-dim-val');
+    if (dimVal) dimVal.textContent = `${n}%`;
+  }
+
+  function setWallpaperBrand(on, persist) {
+    if (persist !== false) {
+      try { localStorage.setItem(LS_WALLPAPER_BRAND, on ? '1' : '0'); } catch (e) { /* ignore */ }
+    }
+    syncWallpaperBrandVisibility(!!on);
+    $('wallpaper-preview')?.classList.toggle('brand-off', !on);
+  }
+
+  function handleWallpaperFile(file) {
+    if (!file || !String(file.type || '').startsWith('image/')) {
+      setSideHint('请选择图片文件', 'err');
+      return;
+    }
+    if (file.size > 4 * 1024 * 1024) {
+      setSideHint('图片过大（请小于 4MB）', 'err');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      const dataUrl = String(reader.result || '');
+      if (!dataUrl.startsWith('data:image/')) {
+        setSideHint('无法读取图片', 'err');
+        return;
+      }
+      const img = new Image();
+      img.onload = () => {
+        try {
+          const maxW = 1600;
+          const scale = img.width > maxW ? maxW / img.width : 1;
+          const w = Math.max(1, Math.round(img.width * scale));
+          const h = Math.max(1, Math.round(img.height * scale));
+          const canvas = document.createElement('canvas');
+          canvas.width = w;
+          canvas.height = h;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, w, h);
+          let quality = 0.78;
+          let out = canvas.toDataURL('image/jpeg', quality);
+          // 控制体积，避免 data URL 拖慢界面
+          while (out.length > 900000 && quality > 0.45) {
+            quality -= 0.08;
+            out = canvas.toDataURL('image/jpeg', quality);
+          }
+          localStorage.setItem(LS_WALLPAPER_CUSTOM, out);
+          localStorage.setItem(LS_WALLPAPER, 'custom');
+          applyMacWallpaper('custom', true);
+          renderWallpaperGrid();
+          setSideHint(t('wallpaper.custom'), 'ok');
+        } catch (e) {
+          setSideHint('保存壁纸失败（浏览器存储空间不足）', 'err');
+        }
+      };
+      img.onerror = () => setSideHint('读取图片失败', 'err');
+      img.src = dataUrl;
+    };
+    reader.onerror = () => setSideHint('读取图片失败', 'err');
+    reader.readAsDataURL(file);
   }
 
   /** @type {Record<string, { input: number, output: number }>} */
@@ -1297,14 +1553,19 @@
       if (el) el.textContent = countText;
     });
 
-    const html = claudeSessions.map((s) => {
-      const active = s.session_id === selectedClaudeSessionId ? ' active' : '';
-      const meta = [s.modified_text, s.message_count ? `${s.message_count} 条` : '', s.git_branch].filter(Boolean).join(' · ');
-      return `<button type="button" class="claude-session-item${active}" data-session-id="${escapeHtml(s.session_id)}" role="option" aria-selected="${active ? 'true' : 'false'}">
-        <div class="cs-title">${escapeHtml(s.title || s.session_id.slice(0, 8))}</div>
-        <div class="cs-meta">${escapeHtml(meta || s.session_id.slice(0, 12))}</div>
-      </button>`;
-    }).join('');
+    const html = claudeSessions.length
+      ? claudeSessions.map((s) => {
+          const active = s.session_id === selectedClaudeSessionId ? ' active' : '';
+          const meta = [s.modified_text, s.message_count ? `${s.message_count} 条` : '', s.git_branch].filter(Boolean).join(' · ');
+          return `<div class="cs-row">
+            <button type="button" class="claude-session-item${active}" data-session-id="${escapeHtml(s.session_id)}" role="option" aria-selected="${active ? 'true' : 'false'}">
+              <div class="cs-title">${escapeHtml(s.title || s.session_id.slice(0, 8))}</div>
+              <div class="cs-meta">${escapeHtml(meta || s.session_id.slice(0, 12))}</div>
+            </button>
+            <button type="button" class="cs-del" data-session-id="${escapeHtml(s.session_id)}" title="${escapeHtml(t('btn.delete'))}" aria-label="${escapeHtml(t('btn.delete'))}">×</button>
+          </div>`;
+        }).join('')
+      : '<p class="cp-tip">暂无历史会话</p>';
 
     ['claude-session-list', 'claude-session-list-sheet'].forEach((id) => {
       const el = $(id);
@@ -1316,7 +1577,68 @@
           if (sid) resumeClaudeSession(sid);
         });
       });
+      el.querySelectorAll('.cs-del').forEach((btn) => {
+        btn.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          const sid = btn.getAttribute('data-session-id');
+          if (sid) deleteClaudeSession(sid);
+        });
+      });
     });
+  }
+
+  async function deleteClaudeSession(sessionId) {
+    if (!sessionId || !config?.claude_workdir) return;
+    if (!window.confirm(t('hist.deleteConfirm'))) return;
+    try {
+      const q = new URLSearchParams({ workdir: config.claude_workdir });
+      const r = await apiFetch(`/tongling/api/claude/sessions/${encodeURIComponent(sessionId)}?${q}`, {
+        method: 'DELETE',
+      });
+      const d = await r.json();
+      if (!d.success) {
+        setSideHint(d.error || '删除失败', 'err');
+        return;
+      }
+      claudeSessions = d.sessions || [];
+      if (selectedClaudeSessionId === sessionId) {
+        selectedClaudeSessionId = '';
+        localStorage.removeItem(LS_CLAUDE_SESSION);
+      }
+      renderClaudeSessionLists();
+      setSideHint(d.message || t('hist.deleted'), 'ok');
+    } catch (e) {
+      setSideHint(String(e), 'err');
+    }
+  }
+
+  async function clearClaudeSessions() {
+    if (!config?.claude_workdir) return;
+    if (!claudeSessions.length) {
+      setSideHint('暂无历史会话', 'err');
+      return;
+    }
+    if (!window.confirm(t('hist.clearSessionsConfirm'))) return;
+    try {
+      const r = await apiFetch('/tongling/api/claude/sessions/clear', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ workdir: config.claude_workdir }),
+      });
+      const d = await r.json();
+      if (!d.success) {
+        setSideHint(d.error || '清空失败', 'err');
+        return;
+      }
+      claudeSessions = [];
+      selectedClaudeSessionId = '';
+      localStorage.removeItem(LS_CLAUDE_SESSION);
+      renderClaudeSessionLists();
+      setSideHint(d.message || t('hist.cleared'), 'ok');
+    } catch (e) {
+      setSideHint(String(e), 'err');
+    }
   }
 
   function restoreClaudeSessionPreference() {
@@ -1750,10 +2072,13 @@
             auditStatusLabel(a.status),
             a.tool_run_count ? `${a.tool_run_count} 工具` : '',
           ].filter(Boolean).join(' · ');
-          return `<button type="button" class="claude-session-item audit-item${active}" data-audit-id="${escapeHtml(a.audit_id)}" role="option">
-            <div class="cs-title">${escapeHtml(a.title || a.audit_id)}</div>
-            <div class="cs-meta">${escapeHtml(meta)}</div>
-          </button>`;
+          return `<div class="cs-row">
+            <button type="button" class="claude-session-item audit-item${active}" data-audit-id="${escapeHtml(a.audit_id)}" role="option">
+              <div class="cs-title">${escapeHtml(a.title || a.audit_id)}</div>
+              <div class="cs-meta">${escapeHtml(meta)}</div>
+            </button>
+            <button type="button" class="cs-del" data-audit-id="${escapeHtml(a.audit_id)}" title="${escapeHtml(t('btn.delete'))}" aria-label="${escapeHtml(t('btn.delete'))}">×</button>
+          </div>`;
         }).join('')
       : '<p class="cp-tip">暂无审计记录。新建终端并使用后自动落盘。</p>';
 
@@ -1767,7 +2092,56 @@
           if (aid) openAuditReport(aid);
         });
       });
+      el.querySelectorAll('.cs-del').forEach((btn) => {
+        btn.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          const aid = btn.getAttribute('data-audit-id');
+          if (aid) deleteAuditRecord(aid);
+        });
+      });
     });
+  }
+
+  async function deleteAuditRecord(auditId) {
+    if (!auditId) return;
+    if (!window.confirm(t('hist.deleteConfirm'))) return;
+    try {
+      const r = await apiFetch(`/tongling/api/audit/${encodeURIComponent(auditId)}`, { method: 'DELETE' });
+      const d = await r.json();
+      if (!d.success) {
+        setSideHint(d.error || '删除失败', 'err');
+        return;
+      }
+      auditRecords = d.audits || [];
+      if (activeAuditId === auditId) activeAuditId = '';
+      renderAuditLists();
+      setSideHint(d.message || t('hist.deleted'), 'ok');
+    } catch (e) {
+      setSideHint(String(e), 'err');
+    }
+  }
+
+  async function clearAuditRecords() {
+    if (!auditRecords.length) {
+      setSideHint('暂无审计记录', 'err');
+      return;
+    }
+    if (!window.confirm(t('hist.clearAuditsConfirm'))) return;
+    try {
+      const r = await apiFetch('/tongling/api/audit/clear', { method: 'POST' });
+      const d = await r.json();
+      if (!d.success) {
+        setSideHint(d.error || '清空失败', 'err');
+        return;
+      }
+      auditRecords = [];
+      activeAuditId = '';
+      renderAuditLists();
+      setSideHint(d.message || t('hist.cleared'), 'ok');
+    } catch (e) {
+      setSideHint(String(e), 'err');
+    }
   }
 
   async function loadAudits() {
@@ -4127,8 +4501,9 @@
       }
     }
     if (wallpaper) {
-      wallpaper.hidden = !on;
-      wallpaper.setAttribute('aria-hidden', on ? 'false' : 'true');
+      const showBrand = on && getWallpaperBrandOn();
+      wallpaper.hidden = !showBrand;
+      wallpaper.setAttribute('aria-hidden', showBrand ? 'false' : 'true');
     }
     if (!on) closeAllMacAppWindows();
     if (on) syncMacDockActive('agent');
@@ -4618,6 +4993,8 @@
       setTimeout(() => {
         if (isTermFullscreen()) openMacAppWindow('control');
       }, 60);
+      // 进入工作台时顺便请求浏览器全屏（需用户手势，失败则忽略）
+      enterBrowserFullscreen();
     } else {
       macWinMaxId = '';
       macTermMinimized.clear();
@@ -4639,12 +5016,85 @@
       }
       stopMacMenubarMetrics();
       scheduleSaveMacLayout();
+      exitBrowserFullscreen();
     }
     fitTerminal(activeSessionId || undefined);
   }
 
   function toggleTermFullscreen() {
     setTermFullscreen(!isTermFullscreen());
+  }
+
+  function isBrowserFullscreen() {
+    return !!(
+      document.fullscreenElement
+      || document.webkitFullscreenElement
+      || document.msFullscreenElement
+    );
+  }
+
+  function syncBrowserFsButtons() {
+    const on = isBrowserFullscreen();
+    ['btn-mac-browser-fs', 'btn-browser-fs'].forEach((id) => {
+      const el = $(id);
+      if (!el) return;
+      el.setAttribute('aria-pressed', on ? 'true' : 'false');
+      el.classList.toggle('is-active', on);
+      const label = on ? t('menubar.browserFsExit') : t('menubar.browserFs');
+      if (el.textContent !== label) el.textContent = label;
+      el.title = on ? 'Esc 退出浏览器全屏' : '浏览器全屏';
+    });
+  }
+
+  function enterBrowserFullscreen() {
+    if (isBrowserFullscreen()) {
+      syncBrowserFsButtons();
+      return Promise.resolve();
+    }
+    const el = document.documentElement;
+    const req = el.requestFullscreen
+      || el.webkitRequestFullscreen
+      || el.msRequestFullscreen;
+    if (!req) return Promise.resolve();
+    try {
+      const ret = req.call(el);
+      return Promise.resolve(ret).then(() => {
+        syncBrowserFsButtons();
+        // 全屏后重算终端尺寸
+        requestAnimationFrame(() => fitTerminal(activeSessionId || undefined));
+      }).catch(() => {
+        syncBrowserFsButtons();
+      });
+    } catch (e) {
+      syncBrowserFsButtons();
+      return Promise.resolve();
+    }
+  }
+
+  function exitBrowserFullscreen() {
+    if (!isBrowserFullscreen()) {
+      syncBrowserFsButtons();
+      return Promise.resolve();
+    }
+    const exit = document.exitFullscreen
+      || document.webkitExitFullscreen
+      || document.msExitFullscreen;
+    if (!exit) return Promise.resolve();
+    try {
+      const ret = exit.call(document);
+      return Promise.resolve(ret).then(() => {
+        syncBrowserFsButtons();
+        requestAnimationFrame(() => fitTerminal(activeSessionId || undefined));
+      }).catch(() => syncBrowserFsButtons());
+    } catch (e) {
+      syncBrowserFsButtons();
+      return Promise.resolve();
+    }
+  }
+
+  function toggleBrowserFullscreen() {
+    if (isBrowserFullscreen()) exitBrowserFullscreen();
+    else enterBrowserFullscreen();
   }
 
   function scrollTermViewport(lines) {
@@ -5870,6 +6320,16 @@
     e.stopPropagation();
     loadClaudeSessions();
   });
+  $('btn-claude-sessions-clear')?.addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    clearClaudeSessions();
+  });
+  $('btn-claude-sessions-clear-sheet')?.addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    clearClaudeSessions();
+  });
 
   $('btn-audit-refresh')?.addEventListener('click', (e) => {
     e.preventDefault();
@@ -5880,6 +6340,16 @@
     e.preventDefault();
     e.stopPropagation();
     loadAudits();
+  });
+  $('btn-audit-clear')?.addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    clearAuditRecords();
+  });
+  $('btn-audit-clear-sheet')?.addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    clearAuditRecords();
   });
 
   $('btn-provider-apply')?.addEventListener('click', () => applyProvider());
@@ -5958,6 +6428,17 @@
   $('btn-panel-toggle')?.addEventListener('click', toggleSidePanel);
   $('btn-term-fullscreen')?.addEventListener('click', toggleTermFullscreen);
   $('m-btn-fullscreen')?.addEventListener('click', toggleTermFullscreen);
+  $('btn-mac-browser-fs')?.addEventListener('click', () => toggleBrowserFullscreen());
+  $('btn-browser-fs')?.addEventListener('click', () => toggleBrowserFullscreen());
+  document.addEventListener('fullscreenchange', () => {
+    syncBrowserFsButtons();
+    requestAnimationFrame(() => fitTerminal(activeSessionId || undefined));
+  });
+  document.addEventListener('webkitfullscreenchange', () => {
+    syncBrowserFsButtons();
+    requestAnimationFrame(() => fitTerminal(activeSessionId || undefined));
+  });
+  syncBrowserFsButtons();
   $('btn-mac-close')?.addEventListener('click', () => setTermFullscreen(false));
   $('btn-mac-min')?.addEventListener('click', () => setTermFullscreen(false));
   $('btn-mac-max')?.addEventListener('click', () => {
@@ -6138,14 +6619,27 @@
   $('m-header-controls')?.addEventListener('click', openControlSheet);
 
   document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && !$('wallpaper-modal')?.classList.contains('hidden')) {
+      e.preventDefault();
+      closeWallpaperModal();
+      return;
+    }
     if (e.key === 'Escape' && !$('about-modal')?.classList.contains('hidden')) {
       e.preventDefault();
       closeAboutModal();
       return;
     }
     if (e.key === 'Escape' && isTermFullscreen()) {
+      // 浏览器全屏时先让 Esc 退出全屏，不退出工作台
+      if (isBrowserFullscreen()) return;
       e.preventDefault();
       handleMacDesktopEscape();
+      return;
+    }
+    // F11：浏览器全屏（工作台内外都可用）
+    if (e.key === 'F11') {
+      e.preventDefault();
+      toggleBrowserFullscreen();
       return;
     }
     // Ctrl+Shift+F：切换终端全屏（避免与浏览器查找冲突过多时仍可用）
@@ -6223,6 +6717,7 @@
   $('more-backdrop')?.addEventListener('click', closeMoreSheet);
 
   initWebTheme();
+  initMacWallpaper();
   initReportOutlineResizer();
   document.addEventListener('visibilitychange', () => {
     if (document.hidden) pauseMacChromeTimers();
@@ -6230,6 +6725,52 @@
   });
   $('theme-select')?.addEventListener('change', (e) => onThemeSelectChange(e.target.value));
   $('theme-select-mobile')?.addEventListener('change', (e) => onThemeSelectChange(e.target.value));
+  $('btn-wallpaper-open')?.addEventListener('click', openWallpaperModal);
+  $('btn-wallpaper-open-mobile')?.addEventListener('click', openWallpaperModal);
+  $('btn-mac-wallpaper')?.addEventListener('click', openWallpaperModal);
+  $('wallpaper-modal-close')?.addEventListener('click', closeWallpaperModal);
+  $('wallpaper-modal-ok')?.addEventListener('click', closeWallpaperModal);
+  $('wallpaper-modal-reset')?.addEventListener('click', () => {
+    try {
+      localStorage.removeItem(LS_WALLPAPER_CUSTOM);
+      localStorage.setItem(LS_WALLPAPER, 'default');
+      localStorage.setItem(LS_WALLPAPER_DIM, '28');
+      localStorage.setItem(LS_WALLPAPER_BRAND, '0');
+    } catch (e) { /* ignore */ }
+    const dimEl = $('wallpaper-dim');
+    if (dimEl) dimEl.value = '28';
+    const brandEl = $('wallpaper-show-brand');
+    if (brandEl) brandEl.checked = false;
+    applyMacWallpaper('default', true);
+    renderWallpaperGrid();
+  });
+  $('wallpaper-modal')?.addEventListener('click', (e) => {
+    if (e.target?.id === 'wallpaper-modal') closeWallpaperModal();
+  });
+  $('wallpaper-dim')?.addEventListener('input', (e) => {
+    setWallpaperDim(e.target.value, true);
+  });
+  $('wallpaper-show-brand')?.addEventListener('change', (e) => {
+    setWallpaperBrand(!!e.target.checked, true);
+  });
+  const drop = $('wallpaper-drop');
+  drop?.addEventListener('click', () => $('wallpaper-file')?.click());
+  drop?.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    drop.classList.add('dragover');
+  });
+  drop?.addEventListener('dragleave', () => drop.classList.remove('dragover'));
+  drop?.addEventListener('drop', (e) => {
+    e.preventDefault();
+    drop.classList.remove('dragover');
+    const file = e.dataTransfer?.files?.[0];
+    if (file) handleWallpaperFile(file);
+  });
+  $('wallpaper-file')?.addEventListener('change', (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (file) handleWallpaperFile(file);
+    e.target.value = '';
+  });
   $('reports-select')?.addEventListener('change', (e) => {
     loadReportPreview(e.target.value || '');
   });

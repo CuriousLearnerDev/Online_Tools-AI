@@ -434,6 +434,99 @@ def load_session_tasks(session_id: str) -> List[dict]:
     return items
 
 
+def _safe_session_id(session_id: str) -> str:
+    sid = (session_id or "").strip()
+    if not sid or ".." in sid or "/" in sid or "\\" in sid:
+        return ""
+    # Claude session id 一般为 UUID；兼容其它安全字符
+    allowed = set("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_")
+    if any(c not in allowed for c in sid):
+        return ""
+    return sid
+
+
+def _remove_from_sessions_index(storage: Path, session_id: str) -> None:
+    index_path = storage / "sessions-index.json"
+    if not index_path.is_file():
+        return
+    try:
+        data = json.loads(index_path.read_text(encoding="utf-8"))
+    except Exception:
+        return
+    changed = False
+    if isinstance(data, dict) and isinstance(data.get("entries"), list):
+        before = len(data["entries"])
+        data["entries"] = [e for e in data["entries"] if str(e.get("sessionId", "")) != session_id]
+        changed = len(data["entries"]) != before
+    elif isinstance(data, list):
+        before = len(data)
+        data = [e for e in data if str(e.get("sessionId", "")) != session_id]
+        changed = len(data) != before
+    if not changed:
+        return
+    try:
+        index_path.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
+    except OSError:
+        pass
+
+
+def _remove_session_tasks(session_id: str) -> None:
+    import shutil
+
+    tasks_dir = claude_home() / "tasks" / session_id
+    if tasks_dir.is_dir():
+        try:
+            shutil.rmtree(tasks_dir, ignore_errors=True)
+        except OSError:
+            pass
+
+
+def delete_session(work_dir: str, session_id: str) -> Tuple[bool, str]:
+    """删除指定 Claude 会话文件（jsonl + index + tasks）。"""
+    sid = _safe_session_id(session_id)
+    if not sid:
+        return False, "无效的会话 ID"
+
+    sessions = list_sessions(work_dir)
+    target = next((s for s in sessions if s.session_id == sid), None)
+    if not target:
+        return False, "会话不存在"
+
+    path = Path(target.path)
+    try:
+        if path.is_file():
+            path.unlink()
+    except OSError as exc:
+        return False, f"删除失败: {exc}"
+
+    storage = path.parent
+    if storage.is_dir():
+        _remove_from_sessions_index(storage, sid)
+    _remove_session_tasks(sid)
+    return True, "已删除"
+
+
+def clear_sessions(work_dir: str) -> Tuple[bool, str, int]:
+    """清空当前工作目录下所有 Claude 历史会话。"""
+    sessions = list_sessions(work_dir)
+    if not sessions:
+        return True, "暂无历史会话", 0
+    deleted = 0
+    errors: List[str] = []
+    for s in sessions:
+        ok, msg = delete_session(work_dir, s.session_id)
+        if ok:
+            deleted += 1
+        else:
+            errors.append(f"{s.session_id[:8]}: {msg}")
+    if deleted == 0 and errors:
+        return False, errors[0], 0
+    detail = f"已删除 {deleted} 条历史会话"
+    if errors:
+        detail += f"（{len(errors)} 条失败）"
+    return True, detail, deleted
+
+
 def git_short_status(work_dir: str) -> str:
     import subprocess
 

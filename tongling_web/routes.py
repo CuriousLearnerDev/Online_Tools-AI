@@ -2001,6 +2001,44 @@ def api_claude_session_detail(session_id: str):
     )
 
 
+@tongling_web_bp.route("/tongling/api/claude/sessions/<session_id>", methods=["DELETE"])
+def api_claude_session_delete(session_id: str):
+    """删除一条 Claude 历史会话。"""
+    _ensure_tongling_import_path()
+    from cc_visual.claude_session import delete_session, list_sessions
+
+    workdir = request.args.get("workdir") or (request.get_json(silent=True) or {}).get("workdir") or _claude_workdir()
+    ok, msg = delete_session(workdir, session_id)
+    if not ok:
+        return jsonify({"success": False, "error": msg}), 404 if "不存在" in msg else 400
+    try:
+        sessions = list_sessions(workdir)
+    except Exception:
+        sessions = []
+    return jsonify(
+        {
+            "success": True,
+            "message": msg,
+            "count": len(sessions),
+            "sessions": [_claude_session_dict(s) for s in sessions],
+        }
+    )
+
+
+@tongling_web_bp.route("/tongling/api/claude/sessions/clear", methods=["POST"])
+def api_claude_sessions_clear():
+    """清空当前工作目录下全部 Claude 历史会话。"""
+    _ensure_tongling_import_path()
+    from cc_visual.claude_session import clear_sessions
+
+    body = request.get_json(silent=True) or {}
+    workdir = body.get("workdir") or request.args.get("workdir") or _claude_workdir()
+    ok, msg, deleted = clear_sessions(workdir)
+    if not ok:
+        return jsonify({"success": False, "error": msg}), 400
+    return jsonify({"success": True, "message": msg, "deleted": deleted, "count": 0, "sessions": []})
+
+
 @tongling_web_bp.route("/tongling/api/audit", methods=["GET"])
 def api_audit_list():
     from tongling_web import audit_store
@@ -2008,6 +2046,16 @@ def api_audit_list():
     limit = int(request.args.get("limit") or 50)
     audits = audit_store.list_tasks(limit=limit)
     return jsonify({"success": True, "audits": audits, "count": len(audits)})
+
+
+@tongling_web_bp.route("/tongling/api/audit/clear", methods=["POST"])
+def api_audit_clear():
+    from tongling_web import audit_store
+
+    ok, msg, deleted = audit_store.clear_tasks()
+    if not ok:
+        return jsonify({"success": False, "error": msg}), 400
+    return jsonify({"success": True, "message": msg, "deleted": deleted, "audits": [], "count": 0})
 
 
 @tongling_web_bp.route("/tongling/api/audit/<audit_id>", methods=["GET"])
@@ -2023,6 +2071,17 @@ def api_audit_detail(audit_id: str):
         payload["terminal_tail"] = audit_store.read_terminal_tail(audit_id)
     payload["events"] = audit_store.load_events(audit_id, limit=int(request.args.get("events") or 100))
     return jsonify(payload)
+
+
+@tongling_web_bp.route("/tongling/api/audit/<audit_id>", methods=["DELETE"])
+def api_audit_delete(audit_id: str):
+    from tongling_web import audit_store
+
+    ok, msg = audit_store.delete_task(audit_id)
+    if not ok:
+        return jsonify({"success": False, "error": msg}), 400
+    audits = audit_store.list_tasks(limit=50)
+    return jsonify({"success": True, "message": msg, "audits": audits, "count": len(audits)})
 
 
 @tongling_web_bp.route("/tongling/api/audit/<audit_id>/sync", methods=["POST"])

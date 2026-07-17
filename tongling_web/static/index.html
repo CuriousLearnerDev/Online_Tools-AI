@@ -28,6 +28,11 @@
   <link rel="stylesheet" href="/tongling/static/im-bridge.css" />
 </head>
 <body>
+  <!-- 工作台壁纸：真实图片层（不用 body background，避免拖窗卡顿） -->
+  <div class="mac-wallpaper-layer" id="mac-wallpaper-layer" aria-hidden="true">
+    <img class="mac-wallpaper-img" id="mac-wallpaper-img" src="/tongling/static/wallpapers/default.jpg" alt="" decoding="async" fetchpriority="low" draggable="false" />
+    <div class="mac-wallpaper-dim" id="mac-wallpaper-dim-el"></div>
+  </div>
   <div class="layout" id="app-layout">
     <!-- 桌面侧栏 -->
     <aside class="sidebar desktop-only">
@@ -93,6 +98,8 @@
           <input type="checkbox" id="toggle-mac-term" />
           <span data-i18n="pref.macTerm">默认打开工作台</span>
         </label>
+        <button type="button" class="btn btn-ghost btn-sm sidebar-wallpaper-btn" id="btn-wallpaper-open" data-i18n="wallpaper.change">更换壁纸…</button>
+        <input type="file" id="wallpaper-file" accept="image/*" hidden />
       </div>
     </aside>
 
@@ -154,6 +161,8 @@
               </div>
             </div>
             <div class="mac-menubar-actions" id="mac-menubar-actions">
+              <button type="button" class="btn btn-ghost btn-sm" id="btn-mac-browser-fs" title="浏览器全屏（Esc 退出全屏）" aria-pressed="false" data-i18n="menubar.browserFs">全屏</button>
+              <button type="button" class="btn btn-ghost btn-sm" id="btn-mac-wallpaper" data-i18n="wallpaper.menubar">壁纸</button>
               <button type="button" class="btn btn-ghost btn-sm" id="btn-mac-scan-dock" title="扫描摘要" aria-pressed="false" data-i18n="menubar.scan">扫描摘要</button>
               <button type="button" class="btn btn-primary btn-sm" id="btn-mac-term-new" data-i18n="menubar.newWin">新建窗口</button>
               <button type="button" class="btn btn-ghost btn-sm" id="btn-mac-term-exit" data-i18n="menubar.exit">退出工作台</button>
@@ -360,6 +369,7 @@
                   <button type="button" class="btn btn-ghost btn-sm" id="btn-agent-scan-dock" title="扫描摘要（攻击链 / 线索 / 工具）" aria-label="扫描摘要" aria-pressed="false" data-i18n="term.scan">扫描</button>
                   <button type="button" class="btn btn-ghost btn-sm" id="btn-panel-toggle" title="展开/收起控制面板" aria-label="展开或收起控制面板">◧</button>
                   <button type="button" class="btn btn-ghost btn-sm" id="btn-term-fullscreen" title="多窗口工作台（Esc 退出）" aria-label="多窗口工作台" aria-pressed="false" data-i18n="term.workspace">工作台</button>
+                  <button type="button" class="btn btn-ghost btn-sm" id="btn-browser-fs" title="浏览器全屏" aria-label="浏览器全屏" aria-pressed="false" data-i18n="menubar.browserFs">全屏</button>
                   <span class="term-token-stats mono" id="term-token-stats" hidden title="当前 Web 终端会话 Token 用量（从 Claude 输出解析）">↓ 0 · 计 0</span>
                   <span class="term-status mono" id="term-status" data-i18n="status.disconnected">未连接</span>
                 </div>
@@ -437,6 +447,7 @@
                     <span class="cp-section-title" data-i18n="cp.sessions">历史会话</span>
                     <span class="cp-section-meta">
                       <span class="cp-section-badge mono" id="claude-session-count">—</span>
+                      <button type="button" class="cp-refresh-btn" id="btn-claude-sessions-clear" title="清空历史" aria-label="清空历史会话"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M9 7V5h6v2M6 7l1 14h10l1-14"/></svg></button>
                       <button type="button" class="cp-refresh-btn" id="btn-claude-sessions-refresh" title="刷新" aria-label="刷新历史会话"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12a8 8 0 0 1 13.5-5.7M20 12a8 8 0 0 1-13.5 5.7"/><path d="M16 5h3.5V1.5M7 19H3.5V22.5"/></svg></button>
                     </span>
                   </summary>
@@ -481,6 +492,7 @@
                     <span class="cp-section-title" data-i18n="cp.audit">操作审计</span>
                     <span class="cp-section-meta">
                       <span class="cp-section-badge mono" id="audit-count">—</span>
+                      <button type="button" class="cp-refresh-btn" id="btn-audit-clear" title="清空审计" aria-label="清空操作审计"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M9 7V5h6v2M6 7l1 14h10l1-14"/></svg></button>
                       <button type="button" class="cp-refresh-btn" id="btn-audit-refresh" title="刷新" aria-label="刷新审计列表"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12a8 8 0 0 1 13.5-5.7M20 12a8 8 0 0 1-13.5 5.7"/><path d="M16 5h3.5V1.5M7 19H3.5V22.5"/></svg></button>
                     </span>
                   </summary>
@@ -1210,6 +1222,7 @@
           <span class="cp-section-title" data-i18n="cp.sessions">历史会话</span>
           <span class="cp-section-meta">
             <span class="cp-section-badge mono" id="claude-session-count-sheet">—</span>
+            <button type="button" class="cp-refresh-btn" id="btn-claude-sessions-clear-sheet" title="清空历史" aria-label="清空历史会话"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M9 7V5h6v2M6 7l1 14h10l1-14"/></svg></button>
             <button type="button" class="cp-refresh-btn" id="btn-claude-sessions-refresh-sheet" title="刷新" aria-label="刷新历史会话"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12a8 8 0 0 1 13.5-5.7M20 12a8 8 0 0 1-13.5 5.7"/><path d="M16 5h3.5V1.5M7 19H3.5V22.5"/></svg></button>
           </span>
         </summary>
@@ -1254,6 +1267,7 @@
           <span class="cp-section-title" data-i18n="cp.audit">操作审计</span>
           <span class="cp-section-meta">
             <span class="cp-section-badge mono" id="audit-count-sheet">—</span>
+            <button type="button" class="cp-refresh-btn" id="btn-audit-clear-sheet" title="清空审计" aria-label="清空操作审计"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M9 7V5h6v2M6 7l1 14h10l1-14"/></svg></button>
             <button type="button" class="cp-refresh-btn" id="btn-audit-refresh-sheet" title="刷新" aria-label="刷新审计列表"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12a8 8 0 0 1 13.5-5.7M20 12a8 8 0 0 1-13.5 5.7"/><path d="M16 5h3.5V1.5M7 19H3.5V22.5"/></svg></button>
           </span>
         </summary>
@@ -1340,6 +1354,7 @@
           <input type="checkbox" id="toggle-mac-term-mobile" />
           <span data-i18n="pref.macTermMobile">默认打开工作台（手机也可勾选）</span>
         </label>
+        <button type="button" class="btn btn-ghost btn-sm" id="btn-wallpaper-open-mobile" data-i18n="wallpaper.change">更换壁纸…</button>
       </div>
 
       <div class="more-group-title" data-i18n="more.group.workspace">工作台</div>
@@ -1426,6 +1441,43 @@
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-ghost" id="lib-detail-close-btn" data-i18n="term.close">关闭</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 工作台壁纸 -->
+  <div class="modal-overlay hidden" id="wallpaper-modal" aria-hidden="true">
+    <div class="modal wallpaper-modal" role="dialog" aria-labelledby="wallpaper-modal-title">
+      <div class="modal-header">
+        <h2 id="wallpaper-modal-title" data-i18n="wallpaper.pickerTitle">更换工作台壁纸</h2>
+        <button type="button" class="modal-close" id="wallpaper-modal-close" aria-label="关闭">×</button>
+      </div>
+      <div class="wallpaper-modal-body">
+        <div class="wallpaper-preview" id="wallpaper-preview" aria-hidden="true">
+          <img class="wallpaper-preview-img" id="wallpaper-preview-img" src="/tongling/static/wallpapers/default.jpg" alt="" decoding="async" draggable="false" />
+          <div class="wallpaper-preview-dim" id="wallpaper-preview-dim"></div>
+          <div class="wallpaper-preview-brand">统领</div>
+        </div>
+        <div class="wallpaper-grid" id="wallpaper-grid" role="listbox" aria-label="壁纸预设"></div>
+        <div class="wallpaper-drop" id="wallpaper-drop" tabindex="0">
+          <div class="wallpaper-drop-title" data-i18n="wallpaper.dropTitle">拖拽图片到此处，或点击上传</div>
+          <div class="wallpaper-drop-hint" data-i18n="wallpaper.dropHint">支持 JPG / PNG，建议 1920×1080，小于 4MB</div>
+        </div>
+        <div class="wallpaper-controls">
+          <label class="wallpaper-ctrl">
+            <span data-i18n="wallpaper.dim">背景压暗</span>
+            <input type="range" id="wallpaper-dim" min="0" max="70" step="1" value="28" />
+            <span class="mono" id="wallpaper-dim-val">28%</span>
+          </label>
+          <label class="wallpaper-ctrl wallpaper-ctrl-check">
+            <input type="checkbox" id="wallpaper-show-brand" />
+            <span data-i18n="wallpaper.showBrand">显示桌面品牌字</span>
+          </label>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-ghost" id="wallpaper-modal-reset" data-i18n="wallpaper.reset">恢复默认</button>
+        <button type="button" class="btn btn-accent" id="wallpaper-modal-ok" data-i18n="tip.ok">完成</button>
       </div>
     </div>
   </div>

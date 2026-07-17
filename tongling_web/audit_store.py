@@ -9,7 +9,7 @@ import secrets
 import threading
 import time
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 logger = logging.getLogger(__name__)
 
@@ -396,6 +396,45 @@ def finalize_task(
 def list_tasks(limit: int = 50) -> List[Dict[str, Any]]:
     entries = _load_index()
     return entries[: max(1, min(limit, _MAX_INDEX))]
+
+
+def delete_task(audit_id: str) -> Tuple[bool, str]:
+    """删除单条审计记录（目录 + 索引）。"""
+    import shutil
+
+    safe = "".join(c for c in (audit_id or "") if c.isalnum() or c in ("_", "-"))
+    if not safe or safe != (audit_id or "").strip():
+        return False, "无效的审计 ID"
+    tdir = _task_dir(safe)
+    with _lock:
+        entries = _load_index()
+        entries = [e for e in entries if e.get("audit_id") != safe]
+        _save_index(entries)
+    if os.path.isdir(tdir):
+        try:
+            shutil.rmtree(tdir, ignore_errors=True)
+        except OSError as exc:
+            return False, f"删除目录失败: {exc}"
+    elif not any(e.get("audit_id") == safe for e in _load_index()):
+        # 目录已不在且索引已清理
+        pass
+    return True, "已删除"
+
+
+def clear_tasks() -> Tuple[bool, str, int]:
+    """清空全部操作审计。"""
+    entries = _load_index()
+    if not entries:
+        return True, "暂无审计记录", 0
+    deleted = 0
+    for e in list(entries):
+        aid = str(e.get("audit_id") or "")
+        if not aid:
+            continue
+        ok, _ = delete_task(aid)
+        if ok:
+            deleted += 1
+    return True, f"已删除 {deleted} 条审计记录", deleted
 
 
 def get_task(audit_id: str) -> Optional[Dict[str, Any]]:
