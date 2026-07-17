@@ -21,7 +21,7 @@
     mcp: { title: 'MCP 连接', sub: '' },
     im: { title: '社交接入', sub: '' },
     nps: { title: '内网穿透', sub: '' },
-    files: { title: '文件管理', crumbTitle: '文件管理', sub: '统领项目目录' },
+    files: { title: '文件管理', crumbTitle: '文件管理', sub: '本机任意目录' },
     logs: { title: '服务日志', sub: '' },
     settings: { title: '设置', sub: '' },
     help: { title: '工具说明', sub: '' },
@@ -130,7 +130,10 @@
         el = doc.createElement('style');
         el.id = 'tongling-embed-style';
         doc.head.appendChild(el);
+      } else if (el.dataset.theme === themeId && el.textContent) {
+        return;
       }
+      el.dataset.theme = themeId;
       el.textContent = buildEmbedThemeCss();
     } catch (e) { /* 非同源时忽略 */ }
   }
@@ -211,12 +214,14 @@
   function termFlushDelayMs(sessionId) {
     // 拖窗/改尺寸时大幅推迟刷屏，优先跟手
     if (isMacDesktopInteracting()) {
-      if (sessionId && sessionId !== activeSessionId) return 240;
-      return 40;
+      if (sessionId && sessionId !== activeSessionId) return 280;
+      return 48;
     }
+    // 最小化/不可见窗口再让路
+    if (sessionId && isTermFullscreen() && !isMacTermWinVisible(sessionId)) return 320;
     // 打字时后台终端尽量让路；当前会话用 rAF，这里只服务后台
-    if (isTermTypingHot() && sessionId && sessionId !== activeSessionId) return 120;
-    if (sessionId && sessionId !== activeSessionId) return isMobileView() ? 64 : 48;
+    if (isTermTypingHot() && sessionId && sessionId !== activeSessionId) return 140;
+    if (sessionId && sessionId !== activeSessionId) return isMobileView() ? 80 : 56;
     return isMobileView() ? 20 : 12;
   }
 
@@ -245,6 +250,7 @@
   const LS_BURP_MCP = 'tongling_burp_mcp_v1';
   const LS_THEME = 'tongling_web_theme';
   const LS_SKIP_ANTHROPIC_BANNER = 'tongling_skip_anthropic_banner';
+  const LS_SKIP_PERMISSIONS = 'tongling_skip_permissions';
 
   const ANTHROPIC_CONNECT_ERR_RES = [
     /Unable to connect to Anthropic services/i,
@@ -431,6 +437,7 @@
   }
 
   function probeAnthropicConnectError(raw) {
+    if (anthropicBannerShown) return;
     if (!raw || localStorage.getItem(LS_SKIP_ANTHROPIC_BANNER) === '1') return;
     const chunk = stripAnsi(raw).replace(/\r/g, '');
     if (!chunk) return;
@@ -1048,6 +1055,33 @@
     return ($('select-cli-model')?.value || $('select-cli-model-sheet')?.value || '').trim();
   }
 
+  function getSkipPermissions() {
+    const a = $('chk-skip-permissions');
+    const b = $('chk-skip-permissions-sheet');
+    if (a) return !!a.checked;
+    if (b) return !!b.checked;
+    return true;
+  }
+
+  function persistSkipPermissions() {
+    try {
+      localStorage.setItem(LS_SKIP_PERMISSIONS, getSkipPermissions() ? '1' : '0');
+    } catch { /* ignore */ }
+  }
+
+  function restoreSkipPermissions() {
+    let on = true;
+    try {
+      const v = localStorage.getItem(LS_SKIP_PERMISSIONS);
+      if (v === '0') on = false;
+      else if (v === '1') on = true;
+    } catch { /* ignore */ }
+    const a = $('chk-skip-permissions');
+    const b = $('chk-skip-permissions-sheet');
+    if (a) a.checked = on;
+    if (b) b.checked = on;
+  }
+
   function highlightClaudeSession(sessionId) {
     selectedClaudeSessionId = sessionId || '';
     if (selectedClaudeSessionId) {
@@ -1293,11 +1327,22 @@
 
     let startX = 0;
     let startW = 0;
+    let moveRaf = 0;
+    let pendingW = 0;
     const onMove = (e) => {
-      const w = Math.min(480, Math.max(120, startW + (e.clientX - startX)));
-      applyReportOutlineWidth(w);
+      pendingW = Math.min(480, Math.max(120, startW + (e.clientX - startX)));
+      if (moveRaf) return;
+      moveRaf = requestAnimationFrame(() => {
+        moveRaf = 0;
+        applyReportOutlineWidth(pendingW);
+      });
     };
     const onUp = () => {
+      if (moveRaf) {
+        cancelAnimationFrame(moveRaf);
+        moveRaf = 0;
+        applyReportOutlineWidth(pendingW);
+      }
       resizer.classList.remove('dragging');
       document.body.classList.remove('reports-outline-dragging');
       document.removeEventListener('mousemove', onMove);
@@ -2248,8 +2293,7 @@
     const src = withAuth(raw.startsWith('/tongling/') ? raw : raw);
     frame.src = src;
     frame.setAttribute('data-src', src);
-    setTimeout(() => injectHexStrikeEmbedStyles(frame), 50);
-    setTimeout(() => injectHexStrikeEmbedStyles(frame), 350);
+    setTimeout(() => injectHexStrikeEmbedStyles(frame), 80);
   }
 
   function updatePageCrumb(tab) {
@@ -2409,12 +2453,9 @@
         frame.setAttribute('data-src', src);
       }
       if (raw.startsWith(`${HS_EMBED}`)) {
-        setTimeout(() => injectHexStrikeEmbedStyles(frame), 50);
-        setTimeout(() => injectHexStrikeEmbedStyles(frame), 350);
-        setTimeout(() => injectHexStrikeEmbedStyles(frame), 900);
+        setTimeout(() => injectHexStrikeEmbedStyles(frame), 80);
       } else {
-        setTimeout(() => injectHexStrikeEmbedStyles(frame), 50);
-        setTimeout(() => injectHexStrikeEmbedStyles(frame), 350);
+        setTimeout(() => injectHexStrikeEmbedStyles(frame), 80);
       }
     }
 
@@ -2533,8 +2574,9 @@
   function createXtermInstance(host, sessionId) {
     const mobile = isMobileView();
     const fontSize = mobile ? 15 : 16;
+    // 默认不闪烁光标；激活会话时再打开，避免多窗口 N 路 blink 定时器
     const t = new Terminal({
-      cursorBlink: !mobile,
+      cursorBlink: false,
       fontFamily: "'IBM Plex Mono', 'JetBrains Mono', 'Cascadia Code', Consolas, monospace",
       fontSize,
       lineHeight: mobile ? 1.15 : 1.2,
@@ -2621,6 +2663,7 @@
     if (!st) return;
     if (st.outputTimer) clearTimeout(st.outputTimer);
     if (st.outputRaf) cancelAnimationFrame(st.outputRaf);
+    if (st.scrollSyncRaf) cancelAnimationFrame(st.scrollSyncRaf);
     try { st.term.dispose(); } catch (e) { /* ignore */ }
     st.host.remove();
     delete sessionTerms[sessionId];
@@ -2631,12 +2674,27 @@
     }
   }
 
+  function syncTermPerfFlags() {
+    const mobile = isMobileView();
+    const fs = isTermFullscreen();
+    Object.keys(sessionTerms).forEach((id) => {
+      const st = sessionTerms[id];
+      if (!st?.term?.options) return;
+      const visible = fs ? isMacTermWinVisible(id) : id === activeSessionId;
+      const active = id === activeSessionId && visible;
+      try {
+        st.term.options.cursorBlink = !mobile && active;
+      } catch (e) { /* ignore */ }
+    });
+  }
+
   function syncActiveTermPointers() {
     const st = activeSessionId ? sessionTerms[activeSessionId] : null;
     if (!st) return;
     term = st.term;
     fitAddon = st.fitAddon;
     termStickBottom = st.stickBottom;
+    syncTermPerfFlags();
   }
 
   let subscribeAllTimer = 0;
@@ -2670,6 +2728,7 @@
           body.appendChild(st.host);
         }
       });
+      syncTermPerfFlags();
       return;
     }
     const mount = $('terminal-host');
@@ -2682,6 +2741,7 @@
         getTermPool().appendChild(st.host);
       }
     });
+    syncTermPerfFlags();
   }
 
   function initTerminal() {
@@ -2799,14 +2859,26 @@
     });
   }
 
+  function scheduleSyncTermStickBottomFor(sessionId) {
+    const st = sessionId ? sessionTerms[sessionId] : null;
+    if (st) {
+      if (st.scrollSyncRaf) return;
+      st.scrollSyncRaf = requestAnimationFrame(() => {
+        st.scrollSyncRaf = 0;
+        syncTermStickBottomFor(sessionId);
+      });
+      return;
+    }
+    syncTermStickBottom();
+  }
+
   function bindTermScrollGuardFor(sessionId) {
     const viewport = getTermViewportFor(sessionId);
     if (!viewport || viewport._tlScrollGuardBound) return;
     viewport._tlScrollGuardBound = true;
-    const onScroll = () => syncTermStickBottomFor(sessionId);
+    const onScroll = () => scheduleSyncTermStickBottomFor(sessionId);
+    // scroll 已覆盖 wheel/touch 产生的位移，不再重复绑定以免刷布局读
     viewport.addEventListener('scroll', onScroll, { passive: true });
-    viewport.addEventListener('wheel', onScroll, { passive: true });
-    viewport.addEventListener('touchend', onScroll, { passive: true });
   }
 
   function bindTermScrollGuard() {
@@ -2815,8 +2887,6 @@
     if (!viewport || viewport._tlScrollGuardBound) return;
     viewport._tlScrollGuardBound = true;
     viewport.addEventListener('scroll', syncTermStickBottom, { passive: true });
-    viewport.addEventListener('wheel', syncTermStickBottom, { passive: true });
-    viewport.addEventListener('touchend', syncTermStickBottom, { passive: true });
   }
 
   function scheduleTermScrollToBottomFor(sessionId) {
@@ -3657,8 +3727,7 @@
     }
     const inject = () => injectHexStrikeEmbedStyles(iframe);
     iframe.addEventListener('load', inject, { once: true });
-    setTimeout(inject, 80);
-    setTimeout(inject, 400);
+    setTimeout(inject, 120);
   }
 
   function activateMacAppContent(tab) {
@@ -3825,8 +3894,30 @@
     else if (pct >= 75) el.classList.add('is-warn');
   }
 
+  function setMacMetricValue(el, label, valueText) {
+    if (!el) return;
+    const next = String(valueText ?? '');
+    if (el.dataset.v === next && el.dataset.k === label) return;
+    el.dataset.v = next;
+    el.dataset.k = label;
+    let k = el.querySelector('.mac-metric-k');
+    let v = el.querySelector('.mac-metric-v');
+    if (!k || !v) {
+      el.textContent = '';
+      k = document.createElement('span');
+      k.className = 'mac-metric-k';
+      el.appendChild(k);
+      el.appendChild(document.createTextNode(' '));
+      v = document.createElement('span');
+      v.className = 'mac-metric-v';
+      el.appendChild(v);
+    }
+    if (k.textContent !== label) k.textContent = label;
+    if (v.textContent !== next) v.textContent = next;
+  }
+
   async function updateMacMenubarMetrics() {
-    if (!isTermFullscreen() || macMetricsBusy) return;
+    if (!isTermFullscreen() || document.hidden || macMetricsBusy) return;
     const cpuEl = $('mac-metric-cpu');
     const memEl = $('mac-metric-mem');
     const wrap = $('mac-menubar-metrics');
@@ -3836,8 +3927,8 @@
       const r = await apiFetch('/tongling/api/host/metrics');
       const d = await r.json().catch(() => ({}));
       if (!r.ok || !d?.success) {
-        cpuEl.innerHTML = '<span class="mac-metric-k">CPU</span> —';
-        memEl.innerHTML = `<span class="mac-metric-k">${t('menubar.mem')}</span> —`;
+        setMacMetricValue(cpuEl, 'CPU', '—');
+        setMacMetricValue(memEl, t('menubar.mem'), '—');
         if (wrap) wrap.title = d?.error || '无法读取本机资源';
         return;
       }
@@ -3845,13 +3936,13 @@
       const mem = Number(d.mem_percent);
       const cpuSafe = Number.isFinite(cpu) ? cpu : 0;
       const memSafe = Number.isFinite(mem) ? mem : 0;
-      cpuEl.innerHTML = `<span class="mac-metric-k">CPU</span> ${cpuSafe.toFixed(0)}%`;
+      setMacMetricValue(cpuEl, 'CPU', `${cpuSafe.toFixed(0)}%`);
       const used = Number(d.mem_used_gb);
       const total = Number(d.mem_total_gb);
       const memDetail = Number.isFinite(used) && Number.isFinite(total)
         ? `${memSafe.toFixed(0)}% · ${used.toFixed(1)}/${total.toFixed(0)}G`
         : `${memSafe.toFixed(0)}%`;
-      memEl.innerHTML = `<span class="mac-metric-k">${t('menubar.mem')}</span> ${memDetail}`;
+      setMacMetricValue(memEl, t('menubar.mem'), memDetail);
       setMacMetricLevel(cpuEl, cpuSafe);
       setMacMetricLevel(memEl, memSafe);
       if (wrap) {
@@ -3859,8 +3950,8 @@
           + (Number.isFinite(used) && Number.isFinite(total) ? `（已用 ${used.toFixed(2)} / 共 ${total.toFixed(2)} GB）` : '');
       }
     } catch (e) {
-      cpuEl.innerHTML = '<span class="mac-metric-k">CPU</span> —';
-      memEl.innerHTML = `<span class="mac-metric-k">${t('menubar.mem')}</span> —`;
+      setMacMetricValue(cpuEl, 'CPU', '—');
+      setMacMetricValue(memEl, t('menubar.mem'), '—');
       if (wrap) wrap.title = '无法读取本机资源';
     } finally {
       macMetricsBusy = false;
@@ -3868,9 +3959,10 @@
   }
 
   function startMacMenubarMetrics() {
+    if (document.hidden) return;
     updateMacMenubarMetrics();
     // 首次后再取一次，避开 cpu_percent priming 为 0
-    setTimeout(() => { if (isTermFullscreen()) updateMacMenubarMetrics(); }, 800);
+    setTimeout(() => { if (isTermFullscreen() && !document.hidden) updateMacMenubarMetrics(); }, 800);
     if (!macMetricsTimer) {
       macMetricsTimer = setInterval(updateMacMenubarMetrics, 2500);
     }
@@ -3882,6 +3974,23 @@
       macMetricsTimer = 0;
     }
     macMetricsBusy = false;
+  }
+
+  function pauseMacChromeTimers() {
+    stopMacMenubarMetrics();
+    if (macClockTimer) {
+      clearInterval(macClockTimer);
+      macClockTimer = 0;
+    }
+  }
+
+  function resumeMacChromeTimers() {
+    if (!isTermFullscreen() || document.hidden) return;
+    updateMacMenubarClock();
+    if (!macClockTimer) {
+      macClockTimer = setInterval(updateMacMenubarClock, 30000);
+    }
+    startMacMenubarMetrics();
   }
 
   function syncTermFullscreenButtons(on) {
@@ -4663,6 +4772,7 @@
       proxy: getProxy(),
       initial_prompt: getPrompt(),
       workdir: config.claude_workdir,
+      skip_permissions: getSkipPermissions(),
     };
     if (pendingScanMeta) {
       payload.scan_target = pendingScanMeta.target;
@@ -5509,6 +5619,16 @@
   linkInputs('input-prompt', 'input-prompt-sheet');
   linkInputs('input-prompt-target', 'input-prompt-target-sheet');
   linkSelects('select-prompt', 'select-prompt-sheet');
+  restoreSkipPermissions();
+  const syncSkipPerm = (src, dst) => {
+    if (!src || !dst) return;
+    src.addEventListener('change', () => {
+      dst.checked = src.checked;
+      persistSkipPermissions();
+    });
+  };
+  syncSkipPerm($('chk-skip-permissions'), $('chk-skip-permissions-sheet'));
+  syncSkipPerm($('chk-skip-permissions-sheet'), $('chk-skip-permissions'));
   $('chk-burp-mcp')?.addEventListener('change', () => {
     updateBurpMcpUi();
     persistBurpMcpPrefs();
@@ -5883,6 +6003,10 @@
 
   initWebTheme();
   initReportOutlineResizer();
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) pauseMacChromeTimers();
+    else resumeMacChromeTimers();
+  });
   $('theme-select')?.addEventListener('change', (e) => onThemeSelectChange(e.target.value));
   $('theme-select-mobile')?.addEventListener('change', (e) => onThemeSelectChange(e.target.value));
   $('reports-select')?.addEventListener('change', (e) => {

@@ -1,0 +1,77 @@
+{
+  "version": 1,
+  "prompts": [
+    {
+      "id": "builtin_web_recon",
+      "name": "Web 信息收集",
+      "description": "子域、HTTP 探测、目录与技术栈识别",
+      "tag": "scan",
+      "content": "请对目标 {target} 进行授权范围内的 Web 信息收集：子域枚举、HTTP 探测、目录与参数发现、技术栈识别。 必须通过 HexStrike MCP 工具逐步执行（如 subfinder、httpx、nuclei 等），每步说明使用的工具与关键发现。",
+      "enabled": true,
+      "is_builtin": true,
+      "scenario_id": "web_recon",
+      "created_at": "2026-07-17 09:39:04",
+      "updated_at": "2026-07-17 09:39:04"
+    },
+    {
+      "id": "builtin_vuln_scan",
+      "name": "漏洞扫描",
+      "description": "nuclei / sqlmap / ffuf 等工具链",
+      "tag": "scan",
+      "content": "请对目标 {target} 进行授权范围内的漏洞扫描，优先使用 nuclei、sqlmap、ffuf 等 HexStrike MCP 工具。 按高危→低危汇报，给出证据片段与修复建议。",
+      "enabled": true,
+      "is_builtin": true,
+      "scenario_id": "vuln_scan",
+      "created_at": "2026-07-17 09:39:04",
+      "updated_at": "2026-07-17 09:39:04"
+    },
+    {
+      "id": "builtin_full_pentest",
+      "name": "完整渗透评估",
+      "description": "信息收集 → 漏洞验证 → 风险汇总",
+      "tag": "scan",
+      "content": "请对目标 {target} 制定并执行完整渗透评估：信息收集 → 漏洞验证 → 风险汇总。 全程通过 HexStrike MCP 调用工具，不要仅给理论步骤。",
+      "enabled": true,
+      "is_builtin": true,
+      "scenario_id": "full_pentest",
+      "created_at": "2026-07-17 09:39:04",
+      "updated_at": "2026-07-17 09:39:04"
+    },
+    {
+      "id": "builtin_port_service",
+      "name": "端口与服务",
+      "description": "nmap / naabu 端口与服务识别",
+      "tag": "scan",
+      "content": "请对目标 {target} 进行端口扫描与服务识别（nmap/naabu 等 MCP 工具），列出开放端口、服务版本与潜在攻击面。",
+      "enabled": true,
+      "is_builtin": true,
+      "scenario_id": "port_service",
+      "created_at": "2026-07-17 09:39:04",
+      "updated_at": "2026-07-17 09:39:04"
+    },
+    {
+      "id": "builtin_daily_mcp",
+      "name": "检查 MCP 工具",
+      "description": "新建终端后快速确认 MCP 可用性",
+      "tag": "daily",
+      "content": "请执行 /mcp，列出当前可用 MCP 服务器与工具，并简要说明 HexStrike 是否已就绪。",
+      "enabled": true,
+      "is_builtin": true,
+      "scenario_id": "",
+      "created_at": "2026-07-17 09:39:04",
+      "updated_at": "2026-07-17 09:39:04"
+    },
+    {
+      "id": "builtin_daily_summary",
+      "name": "会话总结",
+      "description": "让 Claude 汇总本轮发现",
+      "tag": "daily",
+      "content": "请总结本次会话已确认的资产、漏洞线索、下一步建议；若适合落盘，请写入 {report_path}（Markdown）。",
+      "enabled": true,
+      "is_builtin": true,
+      "scenario_id": "",
+      "created_at": "2026-07-17 09:39:04",
+      "updated_at": "2026-07-17 09:39:04"
+    }
+  ]
+}

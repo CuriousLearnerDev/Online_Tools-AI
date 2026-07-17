@@ -6,6 +6,21 @@ import os
 from typing import Any, Dict, Optional, Tuple
 
 
+def _as_bool(value: Any, default: bool = True) -> bool:
+    if value is None:
+        return default
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, (int, float)):
+        return bool(value)
+    s = str(value).strip().lower()
+    if s in ("0", "false", "no", "off", ""):
+        return False
+    if s in ("1", "true", "yes", "on"):
+        return True
+    return default
+
+
 def prepare_claude_spec(body: Dict[str, Any]) -> Tuple[bool, str, Optional[dict]]:
     tongling_root = os.environ.get("TONGLING_ROOT") or os.path.dirname(os.path.dirname(__file__))
     if tongling_root not in __import__("sys").path:
@@ -25,6 +40,10 @@ def prepare_claude_spec(body: Dict[str, Any]) -> Tuple[bool, str, Optional[dict]
         opts.model = str(body["model"])
     if body.get("permission_mode"):
         opts.permission_mode = str(body["permission_mode"])
+
+    # 默认跳过权限确认；前端可传 skip_permissions=false 关闭
+    if "skip_permissions" in body:
+        opts.skip_permissions = _as_bool(body.get("skip_permissions"), True)
 
     launch_mode = str(body.get("launch_mode") or "interactive").strip()
     if launch_mode in ("continue", "resume", "print"):

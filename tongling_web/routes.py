@@ -515,9 +515,11 @@ def api_host_metrics():
     return jsonify({"success": True, **m})
 
 
-# ── 文件管理（只读，限制在统领项目根内）──
-_FILES_LIST_LIMIT = 800
-_FILES_READ_MAX = 512 * 1024  # 预览上限 512KB
+# ── 文件管理（本机任意目录可读写，类 Dolphin；默认落点为统领项目根）──
+_FILES_LIST_LIMIT = 2000
+_FILES_READ_MAX = 1024 * 1024  # 预览 / 在线编辑上限 1MB
+_FILES_UPLOAD_MAX = 100 * 1024 * 1024  # 单文件上传 100MB
+_FILES_COMPUTER = "__computer__"
 _FILES_TEXT_EXTS = {
     ".txt", ".md", ".markdown", ".json", ".jsonl", ".yaml", ".yml", ".toml",
     ".ini", ".cfg", ".conf", ".env", ".py", ".js", ".ts", ".tsx", ".jsx",
@@ -527,62 +529,242 @@ _FILES_TEXT_EXTS = {
 }
 
 
-def _files_root() -> str:
-    root = os.path.realpath(_tongling_root())
-    return root
+def _files_project_root() -> str:
+    return os.path.realpath(_tongling_root())
 
 
-def _files_rel_of(abs_path: str, root: str) -> str:
-    rel = os.path.relpath(abs_path, root)
-    if rel in (".", ""):
-        return ""
-    return rel.replace("\\", "/")
+def _files_path_key(abs_path: str) -> str:
+    """API 使用的统一路径键（正斜杠绝对路径）。"""
+    p = os.path.realpath(abs_path)
+    if sys.platform == "win32":
+        p = p.replace("\\", "/")
+        if len(p) == 2 and p[1] == ":":
+            p += "/"
+    return p
 
 
-def _files_resolve(rel_path: str | None) -> tuple[str, str]:
-    """返回 (abs_path, rel_posix)。越界抛 ValueError。"""
-    root = _files_root()
-    if not os.path.isdir(root):
-        raise FileNotFoundError("工作目录不存在")
-    raw = (rel_path or "").replace("\\", "/").strip()
-    if raw in (".", "./"):
-        raw = ""
-    raw = raw.lstrip("/")
-    if ".." in raw.split("/"):
-        raise ValueError("非法路径")
-    abs_path = os.path.realpath(os.path.join(root, raw)) if raw else root
-    if abs_path != root and not abs_path.startswith(root + os.sep):
-        raise ValueError("路径越界")
-    return abs_path, _files_rel_of(abs_path, root)
+def _files_is_fs_root(abs_path: str) -> bool:
+    """磁盘根 / 系统根（不可删改名）。"""
+    p = os.path.realpath(abs_path)
+    if sys.platform == "win32":
+        _drive, tail = os.path.splitdrive(p)
+        return bool(_drive) and tail in ("\\", "/", "")
+    return p == os.path.realpath("/")
 
 
-def _files_entry(abs_path: str, root: str) -> Dict[str, Any]:
+def _files_parent_key(abs_path: str, key: str) -> str:
+    if key == _FILES_COMPUTER:
+        return _FILES_COMPUTER
+    if _files_is_fs_root(abs_path):
+        return _FILES_COMPUTER if sys.platform == "win32" else "/"
+    parent = os.path.dirname(abs_path)
+    if parent == abs_path:
+        return _FILES_COMPUTER if sys.platform == "win32" else "/"
+    return _files_path_key(parent)
+
+
+def _files_crumbs(abs_path: str, key: str) -> List[Dict[str, str]]:
+    if key == _FILES_COMPUTER:
+        return [{"name": "计算机", "path": _FILES_COMPUTER}]
+    crumbs: List[Dict[str, str]] = []
+    if sys.platform == "win32":
+        crumbs.append({"name": "计算机", "path": _FILES_COMPUTER})
+        drive, rest = os.path.splitdrive(abs_path)
+        if not drive:
+            return crumbs
+        drive_abs = os.path.realpath(drive + os.sep)
+        crumbs.append({"name": drive + "/", "path": _files_path_key(drive_abs)})
+        parts = [p for p in rest.replace("\\", "/").split("/") if p]
+        acc = drive_abs
+        for part in parts:
+            acc = os.path.join(acc, part)
+            crumbs.append({"name": part, "path": _files_path_key(acc)})
+        return crumbs
+    crumbs.append({"name": "/", "path": "/"})
+    parts = [p for p in key.split("/") if p]
+    acc = "/"
+    for part in parts:
+        acc = "/" + part if acc == "/" else acc + "/" + part
+        crumbs.append({"name": part, "path": acc})
+    return crumbs
+
+
+def _files_resolve(path: str | None) -> tuple[str, str]:
+    """返回 (abs_path_or_sentinel, path_key)。支持绝对路径 / 相对项目路径 / ~ / 计算机。"""
+    raw = (path if path is not None else "").strip().replace("\\", "/")
+    if raw in ("", ".", "./"):
+        abs_path = _files_project_root()
+        if not os.path.isdir(abs_path):
+            raise FileNotFoundError("项目目录不存在")
+        return abs_path, _files_path_key(abs_path)
+    if raw == _FILES_COMPUTER:
+        return _FILES_COMPUTER, _FILES_COMPUTER
+    if raw.startswith("~"):
+        home = os.path.expanduser("~")
+        rest = raw[1:].lstrip("/")
+        abs_path = os.path.realpath(os.path.join(home, rest) if rest else home)
+        return abs_path, _files_path_key(abs_path)
+
+    is_abs = raw.startswith("/") or (len(raw) >= 2 and raw[1] == ":")
+    if is_abs:
+        if sys.platform == "win32" and len(raw) == 2 and raw[1] == ":":
+            raw = raw + "/"
+        abs_path = os.path.realpath(raw)
+    else:
+        if ".." in raw.split("/"):
+            raise ValueError("非法路径")
+        abs_path = os.path.realpath(os.path.join(_files_project_root(), raw.lstrip("/")))
+    return abs_path, _files_path_key(abs_path)
+
+
+def _files_safe_name(name: str) -> str:
+    n = (name or "").strip().replace("\\", "/").split("/")[-1].strip()
+    if not n or n in (".", "..") or "/" in n or "\\" in n:
+        raise ValueError("非法文件名")
+    if any(ch in n for ch in '<>:"|?*\x00'):
+        raise ValueError("文件名包含非法字符")
+    return n
+
+
+def _files_join_child(parent_abs: str, name: str) -> str:
+    if parent_abs == _FILES_COMPUTER:
+        raise ValueError("不能在「计算机」下直接创建")
+    parent_real = os.path.realpath(parent_abs)
+    child = os.path.realpath(os.path.join(parent_real, name))
+    if child != parent_real and not child.startswith(parent_real + os.sep):
+        raise ValueError("非法目标路径")
+    return child
+
+
+def _files_entry(abs_path: str) -> Dict[str, Any]:
     st = os.stat(abs_path)
     is_dir = os.path.isdir(abs_path)
-    name = os.path.basename(abs_path) or os.path.basename(root)
-    rel = _files_rel_of(abs_path, root)
+    name = os.path.basename(abs_path.rstrip("\\/")) or abs_path
+    if sys.platform == "win32" and _files_is_fs_root(abs_path):
+        drive, _ = os.path.splitdrive(abs_path)
+        name = (drive or name) + "/"
     return {
         "name": name,
-        "path": rel,
+        "path": _files_path_key(abs_path),
         "type": "dir" if is_dir else "file",
         "size": 0 if is_dir else int(st.st_size),
         "mtime": int(st.st_mtime),
     }
 
 
+def _files_list_drives() -> List[Dict[str, Any]]:
+    import string
+
+    entries: List[Dict[str, Any]] = []
+    if sys.platform == "win32":
+        for letter in string.ascii_uppercase:
+            root = f"{letter}:\\"
+            if not os.path.exists(root):
+                continue
+            try:
+                entries.append(_files_entry(root))
+            except OSError:
+                entries.append(
+                    {
+                        "name": f"{letter}:/",
+                        "path": f"{letter}:/",
+                        "type": "dir",
+                        "size": 0,
+                        "mtime": 0,
+                    }
+                )
+    else:
+        try:
+            entries.append(_files_entry("/"))
+        except OSError:
+            entries.append({"name": "/", "path": "/", "type": "dir", "size": 0, "mtime": 0})
+    return entries
+
+
+def _files_guess_user_dir(*names: str) -> str | None:
+    home = os.path.expanduser("~")
+    for name in names:
+        cand = os.path.join(home, name)
+        if os.path.isdir(cand):
+            return os.path.realpath(cand)
+    return None
+
+
+def _files_json_error(exc: Exception, code: int = 400):
+    return jsonify({"success": False, "error": str(exc)}), code
+
+
+@tongling_web_bp.route("/tongling/api/files/places", methods=["GET"])
+def api_files_places():
+    """侧栏快捷位置（本机 + 项目）。"""
+    project = _files_project_root()
+    home = os.path.expanduser("~")
+    desktop = _files_guess_user_dir("Desktop", "桌面")
+    documents = _files_guess_user_dir("Documents", "文档")
+    downloads = _files_guess_user_dir("Downloads", "下载")
+    places: List[Dict[str, str]] = [
+        {"id": "computer", "name": "计算机", "path": _FILES_COMPUTER, "icon": "▣"},
+        {"id": "home", "name": "主目录", "path": _files_path_key(home), "icon": "⌂"},
+    ]
+    if desktop:
+        places.append({"id": "desktop", "name": "桌面", "path": _files_path_key(desktop), "icon": "▦"})
+    if documents:
+        places.append({"id": "documents", "name": "文档", "path": _files_path_key(documents), "icon": "▤"})
+    if downloads:
+        places.append({"id": "downloads", "name": "下载", "path": _files_path_key(downloads), "icon": "⬇"})
+    places.append({"id": "project", "name": "项目根", "path": _files_path_key(project), "icon": "⌘"})
+    for rel, label, icon in (
+        ("storage", "storage", "▣"),
+        ("tongling_web", "tongling_web", "▤"),
+        ("storage/node_ai/claude-code", "claude-code", "⌘"),
+        ("logs", "logs", "≡"),
+    ):
+        abs_p = os.path.join(project, *rel.split("/"))
+        if os.path.isdir(abs_p):
+            places.append({"id": rel, "name": label, "path": _files_path_key(abs_p), "icon": icon})
+    return jsonify(
+        {
+            "success": True,
+            "project": _files_path_key(project),
+            "home": _files_path_key(home),
+            "places": places,
+            "scope": "system",
+        }
+    )
+
+
 @tongling_web_bp.route("/tongling/api/files/list", methods=["GET"])
 def api_files_list():
     try:
-        abs_path, rel = _files_resolve(request.args.get("path"))
+        abs_path, key = _files_resolve(request.args.get("path"))
     except FileNotFoundError as e:
-        return jsonify({"success": False, "error": str(e)}), 404
+        return _files_json_error(e, 404)
     except ValueError as e:
-        return jsonify({"success": False, "error": str(e)}), 400
-    if not os.path.isdir(abs_path):
-        return jsonify({"success": False, "error": "不是目录"}), 400
-    root = _files_root()
+        return _files_json_error(e, 400)
+
     entries: List[Dict[str, Any]] = []
     truncated = False
+    if key == _FILES_COMPUTER:
+        entries = _files_list_drives()
+        parent = _FILES_COMPUTER
+        crumbs = _files_crumbs(abs_path, key)
+        return jsonify(
+            {
+                "success": True,
+                "project": _files_path_key(_files_project_root()),
+                "path": key,
+                "parent": parent,
+                "crumbs": crumbs,
+                "entries": entries,
+                "truncated": False,
+                "limit": _FILES_LIST_LIMIT,
+                "writable": False,
+                "scope": "system",
+            }
+        )
+
+    if not os.path.isdir(abs_path):
+        return jsonify({"success": False, "error": "不是目录或不存在"}), 400
     try:
         names = os.listdir(abs_path)
     except OSError as e:
@@ -594,29 +776,23 @@ def api_files_list():
             break
         child = os.path.join(abs_path, name)
         try:
-            entries.append(_files_entry(child, root))
+            entries.append(_files_entry(child))
         except OSError:
             continue
-    parent = ""
-    if rel:
-        parent = "/".join(rel.split("/")[:-1])
-    crumbs = []
-    if rel:
-        parts = rel.split("/")
-        acc = []
-        for p in parts:
-            acc.append(p)
-            crumbs.append({"name": p, "path": "/".join(acc)})
+    parent = _files_parent_key(abs_path, key)
+    crumbs = _files_crumbs(abs_path, key)
     return jsonify(
         {
             "success": True,
-            "root": root,
-            "path": rel,
+            "project": _files_path_key(_files_project_root()),
+            "path": key,
             "parent": parent,
             "crumbs": crumbs,
             "entries": entries,
             "truncated": truncated,
             "limit": _FILES_LIST_LIMIT,
+            "writable": True,
+            "scope": "system",
         }
     )
 
@@ -624,18 +800,17 @@ def api_files_list():
 @tongling_web_bp.route("/tongling/api/files/read", methods=["GET"])
 def api_files_read():
     try:
-        abs_path, rel = _files_resolve(request.args.get("path"))
+        abs_path, key = _files_resolve(request.args.get("path"))
     except FileNotFoundError as e:
-        return jsonify({"success": False, "error": str(e)}), 404
+        return _files_json_error(e, 404)
     except ValueError as e:
-        return jsonify({"success": False, "error": str(e)}), 400
-    if not os.path.isfile(abs_path):
+        return _files_json_error(e, 400)
+    if abs_path == _FILES_COMPUTER or not os.path.isfile(abs_path):
         return jsonify({"success": False, "error": "不是文件"}), 400
     size = os.path.getsize(abs_path)
     ext = os.path.splitext(abs_path)[1].lower()
-    # 无扩展名也允许尝试文本
     if ext and ext not in _FILES_TEXT_EXTS and size > 64 * 1024:
-        return jsonify({"success": False, "error": "该类型不支持在线预览，请下载", "path": rel, "size": size}), 415
+        return jsonify({"success": False, "error": "该类型不支持在线预览，请下载", "path": key, "size": size}), 415
     truncated = size > _FILES_READ_MAX
     try:
         with open(abs_path, "rb") as f:
@@ -643,19 +818,19 @@ def api_files_read():
         if len(raw) > _FILES_READ_MAX:
             raw = raw[:_FILES_READ_MAX]
             truncated = True
-        # 粗略判断二进制
         if b"\x00" in raw[:4096]:
-            return jsonify({"success": False, "error": "二进制文件不支持预览", "path": rel, "size": size}), 415
+            return jsonify({"success": False, "error": "二进制文件不支持预览", "path": key, "size": size}), 415
         text = raw.decode("utf-8", errors="replace")
     except OSError as e:
         return jsonify({"success": False, "error": str(e)}), 500
     return jsonify(
         {
             "success": True,
-            "path": rel,
+            "path": key,
             "name": os.path.basename(abs_path),
             "size": size,
             "truncated": truncated,
+            "editable": not truncated and (not ext or ext in _FILES_TEXT_EXTS),
             "content": text,
         }
     )
@@ -664,18 +839,272 @@ def api_files_read():
 @tongling_web_bp.route("/tongling/api/files/download", methods=["GET"])
 def api_files_download():
     try:
-        abs_path, _rel = _files_resolve(request.args.get("path"))
+        abs_path, _key = _files_resolve(request.args.get("path"))
     except FileNotFoundError as e:
-        return jsonify({"success": False, "error": str(e)}), 404
+        return _files_json_error(e, 404)
     except ValueError as e:
-        return jsonify({"success": False, "error": str(e)}), 400
-    if not os.path.isfile(abs_path):
+        return _files_json_error(e, 400)
+    if abs_path == _FILES_COMPUTER or not os.path.isfile(abs_path):
         return jsonify({"success": False, "error": "不是文件"}), 400
     return send_from_directory(
         os.path.dirname(abs_path),
         os.path.basename(abs_path),
         as_attachment=True,
         download_name=os.path.basename(abs_path),
+    )
+
+
+@tongling_web_bp.route("/tongling/api/files/mkdir", methods=["POST"])
+def api_files_mkdir():
+    body = request.get_json(silent=True) or {}
+    try:
+        parent_abs, _ = _files_resolve(body.get("path"))
+        name = _files_safe_name(str(body.get("name") or ""))
+        if parent_abs == _FILES_COMPUTER or not os.path.isdir(parent_abs):
+            raise ValueError("父路径不是目录")
+        dest = _files_join_child(parent_abs, name)
+        if os.path.exists(dest):
+            raise ValueError("已存在同名项")
+        os.makedirs(dest, exist_ok=False)
+        return jsonify({"success": True, "path": _files_path_key(dest), "type": "dir"})
+    except (FileNotFoundError, ValueError, OSError) as e:
+        code = 404 if isinstance(e, FileNotFoundError) else 400
+        return _files_json_error(e, code)
+
+
+@tongling_web_bp.route("/tongling/api/files/create", methods=["POST"])
+def api_files_create():
+    body = request.get_json(silent=True) or {}
+    try:
+        parent_abs, _ = _files_resolve(body.get("path"))
+        name = _files_safe_name(str(body.get("name") or ""))
+        if parent_abs == _FILES_COMPUTER or not os.path.isdir(parent_abs):
+            raise ValueError("父路径不是目录")
+        dest = _files_join_child(parent_abs, name)
+        if os.path.exists(dest):
+            raise ValueError("已存在同名项")
+        content = body.get("content")
+        with open(dest, "w", encoding="utf-8", newline="") as f:
+            if content is not None:
+                f.write(str(content))
+        return jsonify({"success": True, "path": _files_path_key(dest), "type": "file"})
+    except (FileNotFoundError, ValueError, OSError) as e:
+        code = 404 if isinstance(e, FileNotFoundError) else 400
+        return _files_json_error(e, code)
+
+
+@tongling_web_bp.route("/tongling/api/files/write", methods=["POST"])
+def api_files_write():
+    body = request.get_json(silent=True) or {}
+    try:
+        abs_path, key = _files_resolve(body.get("path"))
+        if abs_path == _FILES_COMPUTER or not os.path.isfile(abs_path):
+            raise ValueError("不是文件")
+        content = body.get("content")
+        if content is None:
+            raise ValueError("缺少 content")
+        raw = str(content).encode("utf-8")
+        if len(raw) > _FILES_READ_MAX * 2:
+            raise ValueError("内容过大")
+        with open(abs_path, "wb") as f:
+            f.write(raw)
+        return jsonify({"success": True, "path": key, "size": len(raw)})
+    except (FileNotFoundError, ValueError, OSError) as e:
+        code = 404 if isinstance(e, FileNotFoundError) else 400
+        return _files_json_error(e, code)
+
+
+@tongling_web_bp.route("/tongling/api/files/rename", methods=["POST"])
+def api_files_rename():
+    body = request.get_json(silent=True) or {}
+    try:
+        abs_path, key = _files_resolve(body.get("path"))
+        if abs_path == _FILES_COMPUTER or _files_is_fs_root(abs_path):
+            raise ValueError("不能重命名磁盘根目录")
+        new_name = _files_safe_name(str(body.get("new_name") or ""))
+        parent = os.path.dirname(abs_path)
+        dest = _files_join_child(parent, new_name)
+        if os.path.exists(dest):
+            raise ValueError("目标名称已存在")
+        os.rename(abs_path, dest)
+        return jsonify({"success": True, "from": key, "path": _files_path_key(dest)})
+    except (FileNotFoundError, ValueError, OSError) as e:
+        code = 404 if isinstance(e, FileNotFoundError) else 400
+        return _files_json_error(e, code)
+
+
+@tongling_web_bp.route("/tongling/api/files/delete", methods=["POST"])
+def api_files_delete():
+    import shutil
+
+    body = request.get_json(silent=True) or {}
+    paths = body.get("paths") or body.get("path")
+    if isinstance(paths, str):
+        paths = [paths]
+    if not isinstance(paths, list) or not paths:
+        return jsonify({"success": False, "error": "缺少 paths"}), 400
+    deleted: List[str] = []
+    errors: List[str] = []
+    for p in paths:
+        try:
+            abs_path, key = _files_resolve(str(p))
+            if abs_path == _FILES_COMPUTER or _files_is_fs_root(abs_path):
+                raise ValueError("不能删除磁盘根目录")
+            if os.path.isdir(abs_path) and not os.path.islink(abs_path):
+                shutil.rmtree(abs_path)
+            else:
+                os.remove(abs_path)
+            deleted.append(key)
+        except Exception as e:  # noqa: BLE001
+            errors.append(f"{p}: {e}")
+    ok = bool(deleted) and not errors
+    return jsonify({"success": ok or (bool(deleted) and bool(errors)), "deleted": deleted, "errors": errors, "partial": bool(deleted and errors)})
+
+
+@tongling_web_bp.route("/tongling/api/files/copy", methods=["POST"])
+def api_files_copy():
+    import shutil
+
+    body = request.get_json(silent=True) or {}
+    try:
+        src_abs, src_key = _files_resolve(body.get("src"))
+        dest_dir_abs, _ = _files_resolve(body.get("dest_dir"))
+        if src_abs == _FILES_COMPUTER or dest_dir_abs == _FILES_COMPUTER:
+            raise ValueError("无效的复制位置")
+        if not os.path.isdir(dest_dir_abs):
+            raise ValueError("目标不是目录")
+        name = _files_safe_name(str(body.get("name") or os.path.basename(src_abs.rstrip("\\/"))))
+        dest = _files_join_child(dest_dir_abs, name)
+        if os.path.exists(dest):
+            raise ValueError("目标已存在")
+        if os.path.isdir(src_abs) and not os.path.islink(src_abs):
+            shutil.copytree(src_abs, dest)
+        else:
+            shutil.copy2(src_abs, dest)
+        return jsonify({"success": True, "from": src_key, "path": _files_path_key(dest)})
+    except (FileNotFoundError, ValueError, OSError) as e:
+        code = 404 if isinstance(e, FileNotFoundError) else 400
+        return _files_json_error(e, code)
+
+
+@tongling_web_bp.route("/tongling/api/files/move", methods=["POST"])
+def api_files_move():
+    import shutil
+
+    body = request.get_json(silent=True) or {}
+    try:
+        src_abs, src_key = _files_resolve(body.get("src"))
+        if src_abs == _FILES_COMPUTER or _files_is_fs_root(src_abs):
+            raise ValueError("不能移动磁盘根目录")
+        dest_dir_abs, _ = _files_resolve(body.get("dest_dir"))
+        if dest_dir_abs == _FILES_COMPUTER or not os.path.isdir(dest_dir_abs):
+            raise ValueError("目标不是目录")
+        name = _files_safe_name(str(body.get("name") or os.path.basename(src_abs.rstrip("\\/"))))
+        dest = _files_join_child(dest_dir_abs, name)
+        if os.path.exists(dest):
+            raise ValueError("目标已存在")
+        if os.path.isdir(src_abs):
+            common = os.path.commonpath([src_abs, dest])
+            if common == src_abs:
+                raise ValueError("不能移动到自身子目录")
+        shutil.move(src_abs, dest)
+        return jsonify({"success": True, "from": src_key, "path": _files_path_key(dest)})
+    except (FileNotFoundError, ValueError, OSError) as e:
+        code = 404 if isinstance(e, FileNotFoundError) else 400
+        return _files_json_error(e, code)
+
+
+@tongling_web_bp.route("/tongling/api/files/upload", methods=["POST"])
+def api_files_upload():
+    try:
+        parent_abs, parent_key = _files_resolve(request.form.get("path") or "")
+        if parent_abs == _FILES_COMPUTER or not os.path.isdir(parent_abs):
+            raise ValueError("目标不是目录")
+        files = request.files.getlist("files") or request.files.getlist("file")
+        if not files:
+            raise ValueError("未选择文件")
+        saved: List[str] = []
+        for f in files:
+            if not f or not f.filename:
+                continue
+            name = _files_safe_name(os.path.basename(f.filename.replace("\\", "/")))
+            dest = _files_join_child(parent_abs, name)
+            written = 0
+            with open(dest, "wb") as out:
+                while True:
+                    chunk = f.stream.read(1024 * 256)
+                    if not chunk:
+                        break
+                    written += len(chunk)
+                    if written > _FILES_UPLOAD_MAX:
+                        out.close()
+                        try:
+                            os.remove(dest)
+                        except OSError:
+                            pass
+                        raise ValueError(f"{name} 超过 {_FILES_UPLOAD_MAX // (1024 * 1024)}MB 限制")
+                    out.write(chunk)
+            saved.append(_files_path_key(dest))
+        if not saved:
+            raise ValueError("未写入任何文件")
+        return jsonify({"success": True, "dir": parent_key, "paths": saved})
+    except (FileNotFoundError, ValueError, OSError) as e:
+        code = 404 if isinstance(e, FileNotFoundError) else 400
+        return _files_json_error(e, code)
+
+
+@tongling_web_bp.route("/tongling/api/files/reveal", methods=["POST"])
+def api_files_reveal():
+    """在系统文件管理器中打开目录（或选中文件所在目录）。"""
+    import subprocess
+
+    body = request.get_json(silent=True) or {}
+    try:
+        abs_path, key = _files_resolve(body.get("path") or request.args.get("path"))
+    except FileNotFoundError as e:
+        return _files_json_error(e, 404)
+    except ValueError as e:
+        return _files_json_error(e, 400)
+
+    if abs_path == _FILES_COMPUTER:
+        if sys.platform == "win32":
+            abs_path = os.path.expanduser("~")
+            key = _files_path_key(abs_path)
+        else:
+            abs_path = "/"
+            key = "/"
+
+    target = abs_path
+    select_file = False
+    if os.path.isfile(abs_path):
+        select_file = True
+        target = os.path.dirname(abs_path)
+    if not os.path.isdir(target):
+        return jsonify({"success": False, "error": "目录不存在"}), 404
+
+    try:
+        if sys.platform == "win32":
+            if select_file and os.path.isfile(abs_path):
+                subprocess.Popen(["explorer", "/select,", abs_path], shell=False)
+            else:
+                os.startfile(target)  # type: ignore[attr-defined]
+        elif sys.platform == "darwin":
+            if select_file and os.path.isfile(abs_path):
+                subprocess.Popen(["open", "-R", abs_path])
+            else:
+                subprocess.Popen(["open", target])
+        else:
+            subprocess.Popen(["xdg-open", target])
+    except OSError as e:
+        return jsonify({"success": False, "error": f"无法打开：{e}"}), 500
+
+    return jsonify(
+        {
+            "success": True,
+            "path": key,
+            "opened": target,
+            "message": "已在系统文件管理器中打开",
+        }
     )
 
 

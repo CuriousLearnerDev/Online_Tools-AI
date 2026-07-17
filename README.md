@@ -1,301 +1,242 @@
-English | [中文](./README.zh-CN.md)
+# 统领 Web 独立版
 
-## TongLing Web Standalone
+本项目是从 [统领工具](https://github.com/CuriousLearnerDev/Online_tools) 中分离出来的 **AI 渗透 Web 控制台**，可脱离统领桌面端单独运行。
 
-> **AI-Powered Web Penetration Testing Console** for **Windows / Linux / macOS**
+在 Windows 原版基础上做了跨平台适配，目前可在 **Windows / Linux / macOS** 上正常使用。
 
-TongLing Web Standalone is an independent extraction of the **TongLing Toolkit (Online_tools)**, allowing the AI-powered penetration testing console to run without the desktop application.
+---
 
-Originally developed for Windows, it has now been fully adapted for **Windows, Linux, and macOS**, providing a consistent cross-platform experience.
+## 功能概览
 
-------
+- **AI 渗透终端**：浏览器内 Web 终端，对接 Claude Code + HexStrike MCP 工具链
+- **扫描图谱**：可视化展示扫描会话中的工具调用与探测关系
+- **扫描报告**：自动收录 Markdown 渗透报告，支持大纲预览
+- **任务监控**：查看后台扫描进程与审计任务
+- **社交接入**：钉钉 Stream / Telegram / QQ（OneBot）与终端双向联动
+- **内网穿透**：NPS `npc` 命令行模式，便于手机或外网访问
+- **指纹库 / POC 库**：Nuclei、HFinger 等库管理与同步
 
-## ✨ Key Features
+---
 
-| Feature                                 | Description                                                  |
-| --------------------------------------- | ------------------------------------------------------------ |
-| 🤖 AI Penetration Terminal               | Browser-based terminal powered by Claude Code with HexStrike MCP integration |
-| 📊 Scan Visualization                    | Interactive graph showing AI workflow, scan processes, and tool relationships |
-| 📝 Scan Reports                          | Automatically archives Markdown penetration testing reports with outline preview |
-| 📋 Task Monitoring                       | Monitor background scans, audit tasks, and execution status in real time |
-| 💬 Social Integrations                   | Two-way integration with DingTalk, Telegram, and QQ (OneBot) |
-| 🌍 Remote Access                         | Built-in NPS `npc` support for remote and mobile access      |
-| 🎯 Vulnerability & Fingerprint Libraries | Unified management for Nuclei, Afrog, and HFinger databases  |
+## 环境要求
 
-------
+| 项目 | 说明 |
+|------|------|
+| Python | **3.10+**（推荐 3.11） |
+| 操作系统 | Windows / Linux / macOS |
+| 网络 | 本机访问无需外网；AI 终端与工具下载需联网 |
+| 浏览器 | Chrome / Edge / Firefox 等现代浏览器 |
 
-## 🚀 Why TongLing Web?
+**已内置（本仓库已包含）：**
 
-Compared with traditional command-line workflows, TongLing Web provides:
+- `storage/hexstrike-ai-community-edition-master/` — HexStrike CE 服务端（**启动必需**）
+- `storage/nuclei/nuclei-templates/` — Nuclei 漏洞模板（**漏洞库**，随 `独立Web.cmd` 同步打入）
+- `storage/afrog-pocs/` — Afrog POC 规则（**漏洞库**）
+- `storage/nuclei/poc-index-lite.json` — 漏洞库预建索引（有则一并同步，开箱可搜）
 
-- Browser-based operation with no desktop GUI required
-- AI-assisted penetration testing workflow
-- Visualized scanning process
-- Automatic Markdown report generation
-- Cross-platform support for PC, tablet, and mobile devices
-- Remote collaboration capabilities
+**可选（按需自行准备）：**
 
-------
+| 路径 | 用途 |
+|------|------|
+| `storage/Python311/` | 便携 Python（Windows 无系统 Python 时可用） |
+| `storage/node_ai/` | Claude Code 运行时（AI 终端功能） |
+| `storage/nps/npc` | NPS 客户端（内网穿透） |
+| `storage/hfinger/data/finger.json` | 指纹库数据（Web 指纹页；未打入时需手动放置） |
+| `storage/nuclei/nuclei` 等二进制 | 实际执行扫描的 CLI 工具（漏洞库仅含模板 YAML） |
 
-## ⚙️ Requirements
+---
 
-| Component        | Requirement                                  |
-| ---------------- | -------------------------------------------- |
-| Python           | 3.10+ (3.11 recommended)                     |
-| Node.js          | Required for Claude Code                     |
-| Operating System | Windows / Linux / macOS                      |
-| Browser          | Chrome, Edge, Firefox, or any modern browser |
+## 安装与启动
 
-------
+### Windows（推荐）
 
-## 📦 Built-in Components
+1. 克隆或解压本目录到任意路径（路径尽量不含特殊字符）
+2. 双击 **`start-web.cmd`**
+   - 首次运行会自动执行 `install-deps.cmd` 安装 Python 依赖
+   - 若系统未装 Python，可将便携版放到 `storage/Python311/python.exe`
+3. 控制台会打印 **访问令牌** 与本机地址，例如：
+   ```
+   http://127.0.0.1:15038/tongling/?token=xxxxxxxx
+   ```
+4. 用浏览器打开上述地址即可
 
-Included out of the box:
-
-- ✅ HexStrike Community Edition
-- ✅ Nuclei Templates
-- ✅ Afrog POC Library
-- ✅ Prebuilt POC Search Index
-
-Optional components:
-
-- Claude Code
-- NPS
-- HFinger
-- Nuclei CLI
-- Portable Python (Windows)
-
-------
-
-# 🚀 Quick Start
-
-## Method 1: Docker (Recommended)
+### Linux / macOS
 
 ```bash
-# Pull the image
-docker pull curiouslearnerdev/online_tools_ai:latest
+cd /path/to/web-standalone
 
-# Start the container
-docker run -d \
-  --name online_tools_ai \
-  -p 15038:15038 \
-  curiouslearnerdev/online_tools_ai:latest
+# 安装依赖（首次）
+python3 -m pip install -r requirements-web.txt
 
-# View the access URL and Token
-docker logs online_tools_ai
+# 启动（默认 0.0.0.0:15038）
+export TONGLING_ROOT="$(pwd)"
+python3 tongling_hexstrike_launcher.py
 ```
 
-### Specify a Custom Token
+可选环境变量：
 
 ```bash
-docker run -d \
-  --name online_tools_ai \
-  -p 15038:15038 \
-  -e TONGLING_WEB_TOKEN="your-token" \
-  curiouslearnerdev/online_tools_ai:latest
+export HEXSTRIKE_HOST=0.0.0.0    # 监听地址，默认 0.0.0.0
+export HEXSTRIKE_PORT=15038      # API 端口，默认 15038
 ```
 
-### Persist Logs and Data
+### 完整 HexStrike 扫描依赖（可选）
+
+若需使用 HexStrike 全部扫描工具 API，可额外安装：
 
 ```bash
-docker run -d \
-  --name online_tools_ai \
-  -p 15038:15038 \
-  -e TONGLING_WEB_TOKEN="your-token" \
-  -v $(pwd)/logs:/app/logs \
-  -v $(pwd)/storage_data:/app/storage \
-  curiouslearnerdev/online_tools_ai:latest
+pip install -r storage/hexstrike-ai-community-edition-master/requirements.txt
 ```
 
-------
+---
 
-## Method 2: Run from Source
+## 访问与安全
 
-> Supported on Windows, Linux, and macOS.
+- **首次启动**会在 `storage/.tongling_web_token` 生成访问令牌，重启后不变
+- 请通过 **`/tongling/?token=…`** 访问控制台；根路径 `/` 不对外开放
+- **勿将 Token、API Key、NPS vkey** 提交到公开仓库
+- 外网或手机访问时，建议配合内网穿透并仅暴露必要端口
 
-### 1. Install Python Dependencies
+局域网 / 手机访问示例：
 
-```bash
-pip install -r requirements-web.txt
+```
+http://<本机IP>:15038/tongling/?token=<你的令牌>
 ```
 
-### 2. Install Node.js and Claude Code
+---
 
-```bash
-npm install -g @anthropic-ai/claude-code
+## 目录结构
+
 ```
-
-### 3. Extract Skill Files
-
-```bash
-unzip Skill.zip -d storage/ && rm Skill.zip
-```
-
-### 4. Start the Service
-
-```bash
-python tongling_hexstrike_launcher.py \
-    --host 0.0.0.0 \
-    --port 15038
-```
-
-### 5. Access from Your Browser
-
-After startup, the terminal will display something similar to:
-
-```text
-============================================================
-[TongLing Web] Access Token: xxxxxxxxxxxxxxxxxxxxxxxxx
-[TongLing Web] Local Console:
-http://127.0.0.1:15038/tongling/?token=...
-============================================================
-```
-
-------
-
-## Method 3: Docker Compose
-
-```yaml
-version: "3.8"
-
-services:
-  online_tools_ai:
-    image: curiouslearnerdev/online_tools_ai:latest
-    container_name: online_tools_ai
-
-    ports:
-      - "15038:15038"
-
-    environment:
-      - TONGLING_WEB_TOKEN=your-token
-
-    volumes:
-      - ./logs:/app/logs
-      - ./storage_data:/app/storage
-
-    restart: unless-stopped
-docker-compose up -d
-```
-
-------
-
-# 🔒 Security
-
-On first launch, an access token will be automatically generated:
-
-```text
-storage/.tongling_web_token
-```
-
-Access the console via:
-
-```text
-http://<IP>:15038/tongling/?token=<your-token>
-```
-
-> **Important:** Never commit your Token, API Keys, or NPS vkey to a public repository.
-
-------
-
-# 📂 Project Structure
-
-```text
 web-standalone/
-├── start-web.cmd
-├── install-deps.cmd
-├── tongling_hexstrike_launcher.py
-├── claude_hexstrike_bridge.py
-├── requirements-web.txt
-├── tongling_web/
-├── cc_visual/
+├── start-web.cmd              # Windows 一键启动
+├── install-deps.cmd           # Windows 依赖安装
+├── tongling_hexstrike_launcher.py   # 主启动入口
+├── claude_hexstrike_bridge.py       # Claude ↔ HexStrike 桥接
+├── requirements-web.txt       # Web 最小依赖
+├── tongling_web/              # Web 门户（页面、API、IM 桥接）
+├── cc_visual/                 # Claude 终端与会话
 └── storage/
-    ├── hexstrike-ai-community-edition-master/
-    ├── nuclei/nuclei-templates/
-    ├── afrog-pocs/
-    ├── im_bridge/
-    └── logs/
+    ├── hexstrike-ai-community-edition-master/   # HexStrike CE（已内置）
+    ├── nuclei/nuclei-templates/                 # 漏洞库 Nuclei 模板（已内置）
+    ├── afrog-pocs/                              # 漏洞库 Afrog POC（已内置）
+    ├── im_bridge/             # 社交接入配置（运行时生成）
+    └── logs/                  # 运行日志
 ```
 
-------
+---
 
-# 📚 Screenshots
+## 常用说明
 
-## Desktop
+### 漏洞库（Nuclei + Afrog）
 
-![img](https://zssnp-1301606049.cos.ap-nanjing.myqcloud.com/img/image-20260715140930749.png)
+独立包**已预置模板与 POC**（由统领根目录 `独立Web.cmd` 从本机 `storage/` 同步）：
 
-![img](https://zssnp-1301606049.cos.ap-nanjing.myqcloud.com/img/image-20260715140908177.png)
+```text
+storage/nuclei/nuclei-templates/    # Nuclei YAML 模板
+storage/afrog-pocs/pocs/            # Afrog POC
+storage/nuclei/poc-index-lite.json  # 搜索索引（可选，有则免首次扫描）
+```
 
-![img](https://zssnp-1301606049.cos.ap-nanjing.myqcloud.com/img/image-20260715140844479.png)
+- **Linux / 离线**：打开 Web「漏洞库」即可使用，**无需 git 拉取**
+- **更新**：Web 内点「拉取最新 POC」仍可从 GitHub 增量更新（需本机安装 `git` 且能访问 GitHub）
+- **同步前准备**：在统领 Windows 端先在工具箱下载 **nuclei**、**afrog**（或至少拉过一次 POC），再跑 `独立Web.cmd`，否则独立包内无漏洞库
 
-![img](https://zssnp-1301606049.cos.ap-nanjing.myqcloud.com/img/image-20260715141024448.png)
+### 指纹库（HFinger）
 
-![img](https://zssnp-1301606049.cos.ap-nanjing.myqcloud.com/img/image-20260712200100407.png)
+指纹数据文件路径：
 
-![img](https://zssnp-1301606049.cos.ap-nanjing.myqcloud.com/img/image-20260712200121041.png)
+```text
+storage/hfinger/data/finger.json
+```
 
-![img](https://zssnp-1301606049.cos.ap-nanjing.myqcloud.com/img/image-20260712200225786.png)
+独立包**默认不同步**指纹库；需在统领工具箱下载 hfinger 后手动拷贝，或从 [HackAllSec/hfinger](https://github.com/HackAllSec/hfinger) 获取 `data/finger.json` 放到上述路径。
 
-![img](https://zssnp-1301606049.cos.ap-nanjing.myqcloud.com/img/image-20260712200240311.png)
+### 扫描报告保存位置
 
-![img](https://zssnp-1301606049.cos.ap-nanjing.myqcloud.com/img/image-20260712200315783.png)
+默认写入 Claude 工作目录：
 
-![img](https://zssnp-1301606049.cos.ap-nanjing.myqcloud.com/img/image-20260713113230127.png)
+```text
+storage/node_ai/claude-code/reports/{目标}_{时间戳}.md
+```
 
+部分会话也可能直接写在 `claude-code/` 根目录。可在 Web「扫描报告」页统一查看。
 
-## Mobile
+### AI 终端（Claude Code）
 
-![img](https://zssnp-1301606049.cos.ap-nanjing.myqcloud.com/img/20260706133816_392_8.png)
+1. 准备 `storage/node_ai/`（含 `npx` / Claude Code）
+2. 在 Web「设置 → 提供商」配置 `ANTHROPIC_BASE_URL` 与 API Key
+3. 打开「AI 渗透终端」即可在浏览器中使用
 
-![img](https://zssnp-1301606049.cos.ap-nanjing.myqcloud.com/img/20260706134321_396_81.png)
+### 内网穿透（NPS）
 
-## DingTalk Integration
+1. 在 VPS 部署 NPS，于 Web 管理端创建客户端并复制 **vkey**
+2. 本机将 `npc` 放到 `storage/nps/`（或通过统领工具箱下载）
+3. Web「设置 → 内网穿透」填写服务端地址与 vkey，点击启动
+4. 外网访问：`http://公网IP:端口/tongling/?token=…`
 
-![img](https://zssnp-1301606049.cos.ap-nanjing.myqcloud.com/img/image-20260713113130681.png)
+### 钉钉与终端对接
 
-![img](https://zssnp-1301606049.cos.ap-nanjing.myqcloud.com/img/image-20260713113029751.png)
+在「社交接入」中配置钉钉 Stream（或 HTTP 回调），绑定 AI 终端后，可通过钉钉发消息驱动扫描任务，回复会镜像回 IM。
 
-------
+---
 
-# 🔗 Upstream Projects
+## 从统领主项目同步更新
 
-- **TongLing Toolkit (Online_tools)**
-  https://github.com/CuriousLearnerDev/Online_tools
-- **Docker Image**
-  https://hub.docker.com/r/curiouslearnerdev/online_tools_ai
+若你同时维护统领完整版源码，可在统领根目录双击 **`独立Web.cmd`**，将最新 Web 代码同步到本目录（会覆盖 `tongling_web/`、`cc_visual/` 等，**请勿手改这些目录的源码**）。
 
-------
+---
 
-# 🔗 References
+## 工具界面
 
-## HexStrike & Provider Configuration
+运行后打开浏览器访问控制台：
 
-| Description                      | URL                                                          |
-| -------------------------------- | ------------------------------------------------------------ |
-| HexStrike AI Community Edition   | https://github.com/CommonHuman-Lab/hexstrike-ai-community-edition |
-| cc-switch Provider Configuration | https://github.com/farion1231/cc-switch/blob/main/docs/user-manual/providers.md |
+![](https://zssnp-1301606049.cos.ap-nanjing.myqcloud.com/img/image-20260713112748385.png)
 
-## Claude Code & Anthropic
+**电脑端显示：**
 
-| Description               | URL                                                       |
-| ------------------------- | --------------------------------------------------------- |
-| Claude Code Overview      | https://code.claude.com/docs/en/overview                  |
-| Claude Code CLI Reference | https://code.claude.com/docs/en/cli-reference             |
-| Anthropic Documentation   | [https://docs.anthropic.com](https://docs.anthropic.com/) |
-| Anthropic API Endpoint    | [https://api.anthropic.com](https://api.anthropic.com/)   |
+![](https://zssnp-1301606049.cos.ap-nanjing.myqcloud.com/img/image-20260712200100407.png)
 
-## Terminal & Technical References
+![](https://zssnp-1301606049.cos.ap-nanjing.myqcloud.com/img/image-20260712200121041.png)
 
-| Description                        | URL                                              |
-| ---------------------------------- | ------------------------------------------------ |
-| xterm.js                           | [https://xtermjs.org](https://xtermjs.org/)      |
-| xterm.js (CDN)                     | https://cdn.jsdelivr.net/npm/@xterm/xterm@5.5.0/ |
-| pyte Alternate Screen Buffer Issue | https://github.com/selectel/pyte/issues/90       |
+![](https://zssnp-1301606049.cos.ap-nanjing.myqcloud.com/img/image-20260712200225786.png)
 
-## ⚠️ Disclaimer
+![](https://zssnp-1301606049.cos.ap-nanjing.myqcloud.com/img/image-20260712200240311.png)
 
-This project is intended **only for authorized security research, education, and penetration testing**.
+![](https://zssnp-1301606049.cos.ap-nanjing.myqcloud.com/img/image-20260712200315783.png)
 
-By downloading or using this project, you agree to comply with all applicable laws and regulations. The authors and contributors shall not be liable for any misuse of this project or any damages arising from its use.
+![](https://zssnp-1301606049.cos.ap-nanjing.myqcloud.com/img/image-20260713113230127.png)
 
-For more information, please see [README.zh-CN.md](README.zh-CN.md).
+**手机端显示：**
+
+![](https://zssnp-1301606049.cos.ap-nanjing.myqcloud.com/img/20260706133816_392_8.png)
+
+![](https://zssnp-1301606049.cos.ap-nanjing.myqcloud.com/img/20260706134321_396_81.png)
+
+### 钉钉和终端对接
+
+![](https://zssnp-1301606049.cos.ap-nanjing.myqcloud.com/img/image-20260713113130681.png)
+
+![](https://zssnp-1301606049.cos.ap-nanjing.myqcloud.com/img/image-20260713113029751.png)
+
+---
+
+## 常见问题
+
+**Q：启动报错找不到 `hexstrike_server`？**  
+A：确认存在 `storage/hexstrike-ai-community-edition-master/hexstrike_server.py`。
+
+**Q：Web 终端黑屏或无法输入？**  
+A：Windows 需 `pywinpty`（`requirements-web.txt` 已包含）；Linux/macOS 使用系统 `pty`。
+
+**Q：提示 Token 无效？**  
+A：查看 `storage/.tongling_web_token`，或重启服务后使用控制台新打印的地址。
+
+**Q：扫描工具不可用？**  
+A：在 Web 工具箱中按提示下载对应工具到 `storage/`，或安装 HexStrike 完整 `requirements.txt`。
+
+---
+
+## 相关链接
+
+- 统领完整项目：[CuriousLearnerDev/Online_tools](https://github.com/CuriousLearnerDev/Online_tools)

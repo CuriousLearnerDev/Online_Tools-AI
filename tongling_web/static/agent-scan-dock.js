@@ -233,10 +233,16 @@
       onTap: () => setMinimized(false),
     });
 
+    let resizeTimer = 0;
     window.addEventListener('resize', () => {
       if (!open) return;
-      if (minimized) applyChipPos();
-      else restorePos();
+      if (resizeTimer) clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => {
+        resizeTimer = 0;
+        if (!open) return;
+        if (minimized) applyChipPos();
+        else restorePos();
+      }, 120);
     });
   }
 
