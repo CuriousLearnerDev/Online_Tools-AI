@@ -99,7 +99,18 @@ def optional_bearer_auth():
 @app.before_request
 def require_json_for_post():
     """Return 400 instead of a 500 AttributeError when a POST body is missing or not JSON."""
-    if request.method == "POST" and request.content_length != 0 and request.json is None:
+    if request.method != "POST":
+        return
+    # 统领 Web（含 multipart 文件上传）不走 HexStrike JSON 校验
+    if request.path.startswith("/tongling"):
+        return
+    ct = (request.content_type or "").lower()
+    if ct.startswith("multipart/form-data") or ct.startswith("application/x-www-form-urlencoded"):
+        return
+    if not request.content_length:
+        return
+    # 勿用 request.json：非 JSON Content-Type 会抛 415
+    if request.get_json(silent=True) is None:
         return jsonify({
             "error": "Request body must be valid JSON with Content-Type: application/json",
             "success": False,

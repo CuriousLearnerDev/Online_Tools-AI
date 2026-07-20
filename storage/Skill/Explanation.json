@@ -1,0 +1,178 @@
+{
+    "code-audit": {
+        "Introduction": "专业白盒代码安全审计技能，覆盖 55+ 漏洞类型，双轨审计模型，多 Agent 深度分析",
+        "official": "https://github.com/3stoneBrother/code-audit"
+    },
+    "PHP-Code-Audit-Skill": {
+        "Introduction": "是一个专注于PHP代码审计的Skill",
+        "official": "https://github.com/0xShe/PHP-Code-Audit-Skill"
+    },
+    "threat-modeling": {
+        "Introduction": "具备AI原生自动化软件风险分析技能。以LLM驱动、代码优先的方法，用于全面的安全风险评估、威胁建模、安全测试、渗透测试和合规性检查",
+        "official": "https://github.com/fr33d3m0n/threat-modeling"
+    },
+    "ctf-skills": {
+        "Introduction": "解决夺旗挑战的代理技能——网络漏洞利用、二进制pwn、加密、逆向工程、取证、开源情报等",
+        "official": "https://github.com/ljagiello/ctf-skills"
+    },
+    "java-audit-skill": {
+        "Introduction": "一个专业的 java代码审计 Skill",
+        "official": "https://github.com/AuroraProudmoore/java-audit-skill"
+    },
+    "01-信息搜集-Reconnaissance": {
+        "Introduction": "信息搜集(Reconnaissance)安全技能模块，包含被动信息搜集/OSINT、主动信息搜集、DNS枚举、子域名探测、网络空间搜索引擎等7项技能",
+        "official": "https://github.com/Hi-FullHouse/CyberSecurity-Skills"
+    },
+    "02-漏洞扫描-VulnerabilityScanning": {
+        "Introduction": "漏洞扫描(Vulnerability Scanning)安全技能模块，包含Web漏洞扫描、网络漏洞扫描、数据库安全评估、配置审计扫描、漏洞扫描器自动化等6项技能",
+        "official": "https://github.com/Hi-FullHouse/CyberSecurity-Skills"
+    },
+    "03-漏洞利用-Exploitation": {
+        "Introduction": "漏洞利用(Exploitation)安全技能模块，包含Web漏洞利用、SQL注入利用、XSS跨站脚本、文件包含利用、命令注入等9项技能",
+        "official": "https://github.com/Hi-FullHouse/CyberSecurity-Skills"
+    },
+    "04-权限提升-PrivilegeEscalation": {
+        "Introduction": "权限提升(Privilege Escalation)安全技能模块，包含Linux提权、Windows提权、内核漏洞与服务配置错误提权、凭证窃取与利用共4项技能",
+        "official": "https://github.com/Hi-FullHouse/CyberSecurity-Skills"
+    },
+    "05-后渗透-PostExploitation": {
+        "Introduction": "后渗透(Post-Exploitation)安全技能模块，包含信息收集与数据窃取、凭证转储与哈希传递、远程控制与交互式Shell、键盘记录与屏幕捕获共4项技能",
+        "official": "https://github.com/Hi-FullHouse/CyberSecurity-Skills"
+    },
+    "06-横向移动-LateralMovement": {
+        "Introduction": "横向移动(Lateral Movement)安全技能模块，包含横向移动、内网代理与隧道、PsExec与WMI远程执行共3项技能",
+        "official": "https://github.com/Hi-FullHouse/CyberSecurity-Skills"
+    },
+    "07-持久化-Persistence": {
+        "Introduction": "持久化(Persistence)安全技能模块，包含持久化、启动项与登录自动执行、账户创建与凭证持久化、Office应用程序持久化、Bootkit与固件持久化共5项技能",
+        "official": "https://github.com/Hi-FullHouse/CyberSecurity-Skills"
+    },
+    "08-痕迹清除-CoveringTracks": {
+        "Introduction": "痕迹清除(Covering Tracks)安全技能模块，包含痕迹清除与反取证、进程注入与代码注入、代码混淆与反分析、AMSI绕过与EDR规避共4项技能",
+        "official": "https://github.com/Hi-FullHouse/CyberSecurity-Skills"
+    },
+    "09-报告撰写-Reporting": {
+        "Introduction": "报告撰写(Reporting)安全技能模块，包含渗透测试报告编写、漏洞评级与CVSS评分、Markdown安全报告模板、HTML安全报告模板、Word/PDF安全报告模板共5项技能",
+        "official": "https://github.com/Hi-FullHouse/CyberSecurity-Skills"
+    },
+    "10-移动安全-MobileSecurity": {
+        "Introduction": "移动安全(Mobile Security)安全技能模块，包含Android安全测试、iOS安全测试共2项技能",
+        "official": "https://github.com/Hi-FullHouse/CyberSecurity-Skills"
+    },
+    "11-无线安全-WirelessSecurity": {
+        "Introduction": "无线安全(Wireless Security)安全技能模块，包含Wi-Fi安全审计共1项技能",
+        "official": "https://github.com/Hi-FullHouse/CyberSecurity-Skills"
+    },
+    "12-代码审计-CodeAudit": {
+        "Introduction": "代码审计(Code Audit)安全技能模块，包含PHP代码审计、Java代码审计、JavaScript代码审计、Python代码审计、C代码审计等9项技能",
+        "official": "https://github.com/Hi-FullHouse/CyberSecurity-Skills"
+    },
+    "13-逆向工程-ReverseEngineering": {
+        "Introduction": "逆向工程(Reverse Engineering)安全技能模块，包含静态逆向分析、动态调试分析、恶意软件分析共3项技能",
+        "official": "https://github.com/Hi-FullHouse/CyberSecurity-Skills"
+    },
+    "14-安全审计-SecurityAudit": {
+        "Introduction": "安全审计(Security Audit)安全技能模块，包含等级保护合规审计、配置安全审计、安全架构审计、云安全审计、容器安全审计等7项技能",
+        "official": "https://github.com/Hi-FullHouse/CyberSecurity-Skills"
+    },
+    "15-应急响应-IncidentResponse": {
+        "Introduction": "应急响应(Incident Response)安全技能模块，包含事件分类与优先级评估、日志收集与分析、网络流量分析、事件遏制与清除、云环境应急响应等7项技能",
+        "official": "https://github.com/Hi-FullHouse/CyberSecurity-Skills"
+    },
+    "16-大模型安全-LLMSecurity": {
+        "Introduction": "大模型安全(LLM Security)安全技能模块，包含LLM提示注入与安全防护、LLM数据泄露与隐私保护、AI供应链安全、大模型红队测试、AI Agent权限与访问控制等10项技能",
+        "official": "https://github.com/Hi-FullHouse/CyberSecurity-Skills"
+    },
+    "17-云安全-CloudSecurity": {
+        "Introduction": "云安全(Cloud Security)安全技能模块，包含AWS安全评估、Azure安全评估、GCP安全评估、云IAM权限与访问控制审计、云存储安全配置审计等8项技能",
+        "official": "https://github.com/Hi-FullHouse/CyberSecurity-Skills"
+    },
+    "18-安全开发运维-DevSecOps": {
+        "Introduction": "安全开发运维(DevSecOps)安全技能模块，包含CI/CD管道安全审计、IaC安全扫描、SAST静态应用安全测试、DAST动态应用安全测试、软件供应链安全等6项技能",
+        "official": "https://github.com/Hi-FullHouse/CyberSecurity-Skills"
+    },
+    "19-工控安全-ICS-OT-Security": {
+        "Introduction": "工控安全(ICS/OT Security)安全技能模块，包含SCADA系统安全评估、PLC与RTU安全测试、工控网络协议安全、工控安全合规审计（IEC 62443）、工控安全应急预案等6项技能",
+        "official": "https://github.com/Hi-FullHouse/CyberSecurity-Skills"
+    },
+    "20-区块链安全-Blockchain-Web3-Security": {
+        "Introduction": "区块链/Web3安全(Blockchain/Web3 Security)安全技能模块，包含智能合约安全审计、DeFi协议安全评估、共识机制安全分析、Web3前端与钱包安全、区块链节点安全加固等6项技能",
+        "official": "https://github.com/Hi-FullHouse/CyberSecurity-Skills"
+    },
+    "21-物联网安全-IoT-Security": {
+        "Introduction": "物联网安全(IoT Security)安全技能模块，包含固件逆向与分析、BLE/Zigbee/Z-Wave无线安全测试、物联网通信协议安全、嵌入式设备硬件安全测试、物联网平台与云安全等6项技能",
+        "official": "https://github.com/Hi-FullHouse/CyberSecurity-Skills"
+    },
+    "22-数据安全与隐私-DataSecurityPrivacy": {
+        "Introduction": "数据安全与隐私保护(Data Security & Privacy)安全技能模块，包含DLP数据防泄漏策略、数据分类与分级保护、数据库安全与加密、数据脱敏与匿名化、GDPR/个保法合规评估等6项技能",
+        "official": "https://github.com/Hi-FullHouse/CyberSecurity-Skills"
+    },
+    "23-社会工程学-SocialEngineering": {
+        "Introduction": "社会工程学(Social Engineering)安全技能模块，包含钓鱼邮件模拟、电话诈骗与Vishing测试、物理渗透与社会工程、钓鱼基础设施搭建、员工安全意识评估共5项技能",
+        "official": "https://github.com/Hi-FullHouse/CyberSecurity-Skills"
+    },
+    "24-红蓝对抗-RedBlueTeam": {
+        "Introduction": "红蓝对抗(Red/Blue Team)安全技能模块，包含红队评估方法论、蓝队防御与检测、紫队协作评估、BAS攻击模拟平台、闭环防御改进共5项技能",
+        "official": "https://github.com/Hi-FullHouse/CyberSecurity-Skills"
+    },
+    "25-供应链安全-SupplyChainSecurity": {
+        "Introduction": "供应链安全(Supply Chain Security)安全技能模块，包含SBOM生成与验证、软件依赖与开源合规审计、代码签名与供应链完整性、第三方供应商风险评估、供应链攻击检测与响应共5项技能",
+        "official": "https://github.com/Hi-FullHouse/CyberSecurity-Skills"
+    },
+    "26-漏洞管理-VulnerabilityManagement": {
+        "Introduction": "漏洞管理(Vulnerability Management)安全技能模块，包含漏洞情报与CVE查询、漏洞验证与PoC测试、漏洞优先级与风险评估、漏洞修复与补丁管理、漏洞生命周期闭环管理等6项技能",
+        "official": "https://github.com/Hi-FullHouse/CyberSecurity-Skills"
+    },
+    "27-操作系统安全-OSSecurity": {
+        "Introduction": "操作系统安全(OS Security)安全技能模块，包含Windows安全加固与基线检查、Windows攻击与横向移动技术、Linux安全加固与基线检查、Linux攻击与权限维持技术、macOS安全评估与加固等6项技能",
+        "official": "https://github.com/Hi-FullHouse/CyberSecurity-Skills"
+    },
+    "28-威胁狩猎-ThreatHunting": {
+        "Introduction": "威胁狩猎(Threat Hunting)安全技能模块，包含威胁狩猎方法论与假设驱动、基于Sigma规则的检测工程、基于ATT&CK的威胁狩猎、网络流量与日志异常检测共4项技能",
+        "official": "https://github.com/Hi-FullHouse/CyberSecurity-Skills"
+    },
+    "29-威胁情报-ThreatIntelligence": {
+        "Introduction": "威胁情报(Threat Intelligence)安全技能模块，包含威胁情报馈入与TAXII/STIX管理、MISP平台部署与威胁情报共享、APT组织分析与归因、威胁情报驱动安全运营共4项技能",
+        "official": "https://github.com/Hi-FullHouse/CyberSecurity-Skills"
+    },
+    "30-数字取证-DigitalForensics": {
+        "Introduction": "数字取证(Digital Forensics)安全技能模块，包含磁盘镜像与证据获取、内存取证分析(Volatility)、Windows数字取证分析、Linux数字取证分析、浏览器与邮件取证共5项技能",
+        "official": "https://github.com/Hi-FullHouse/CyberSecurity-Skills"
+    },
+    "31-SOC运营-SOCOperations": {
+        "Introduction": "SOC运营(SOC Operations)安全技能模块，包含SIEM告警规则与关联分析、SOC事件分级与响应流程、安全自动化与编排(SOAR)、SOC指标与运营效能度量共4项技能",
+        "official": "https://github.com/Hi-FullHouse/CyberSecurity-Skills"
+    },
+    "32-身份访问管理-IAM": {
+        "Introduction": "身份与访问管理(Identity & Access Management)安全技能模块，包含企业IAM策略与架构、PAM特权账号管理、云IAM与联邦认证、AD域安全与攻击路径分析共4项技能",
+        "official": "https://github.com/Hi-FullHouse/CyberSecurity-Skills"
+    },
+    "33-容器安全-ContainerSecurity": {
+        "Introduction": "容器安全(Container Security)安全技能模块，包含容器镜像安全与漏洞扫描、Kubernetes RBAC与安全策略、容器运行时安全(Falco)、容器逃逸检测与防御共4项技能",
+        "official": "https://github.com/Hi-FullHouse/CyberSecurity-Skills"
+    },
+    "34-API安全-APISecurity": {
+        "Introduction": "API安全(API Security)安全技能模块，包含OWASP API安全测试、API认证与授权安全、GraphQL与微服务API安全共3项技能",
+        "official": "https://github.com/Hi-FullHouse/CyberSecurity-Skills"
+    },
+    "35-密码学与PKI-CryptographyPKI": {
+        "Introduction": "密码学与PKI(Cryptography & PKI)安全技能模块，包含TLS/SSL安全配置与审计、PKI架构与证书安全管理、加密算法与密钥管理共3项技能",
+        "official": "https://github.com/Hi-FullHouse/CyberSecurity-Skills"
+    },
+    "36-零信任架构-ZeroTrust": {
+        "Introduction": "零信任架构(Zero Trust Architecture)安全技能模块，包含零信任架构设计与实施、微隔离与软件定义边界(SDP)、ZTNA解决方案与IAM集成共3项技能",
+        "official": "https://github.com/Hi-FullHouse/CyberSecurity-Skills"
+    },
+    "37-端点安全-EndpointSecurity": {
+        "Introduction": "端点安全(Endpoint Security)安全技能模块，包含EDR部署与检测规则、文件less恶意软件与LOLBins检测、端点加固与合规基线、移动设备安全与MDM共4项技能",
+        "official": "https://github.com/Hi-FullHouse/CyberSecurity-Skills"
+    },
+    "38-勒索软件防御-RansomwareDefense": {
+        "Introduction": "勒索软件防御(Ransomware Defense)安全技能模块，包含勒索软件攻击链分析与检测、勒索软件应急响应与恢复、反勒索软件加固与备份策略共3项技能",
+        "official": "https://github.com/Hi-FullHouse/CyberSecurity-Skills"
+    },
+    "39-安全治理合规-GovernanceCompliance": {
+        "Introduction": "安全治理与合规(Governance & Compliance)安全技能模块，包含安全框架与合规审计、风险管理与安全度量、安全策略体系与安全意识共3项技能",
+        "official": "https://github.com/Hi-FullHouse/CyberSecurity-Skills"
+    }
+}

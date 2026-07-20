@@ -1,8 +1,6 @@
 统领 Web 独立版
 
-本项目是从 [https://github.com/CuriousLearnerDev/Online_tools](https://github.com/CuriousLearnerDev/Online_tools)（如需桌面版，可使用这个提供的 Windows 一键安装版本。） 独立拆分出的 **AI 渗透 Web 控制台**，可脱离统领桌面端单独运行，支持独立部署。
-
-
+本项目是从 [统领工具](https://github.com/CuriousLearnerDev/Online_tools) 中分离出来的 **AI 渗透 Web 控制台**，可脱离统领桌面端单独运行
 
 在 Windows 原版基础上做了跨平台适配，目前可在 **Windows / Linux / macOS** 上正常使用
 
@@ -147,6 +145,79 @@
  docker-compose up -d
 ```
 
+## 📚工具界面
+
+### **电脑端显示：**
+
+![](https://zssnp-1301606049.cos.ap-nanjing.myqcloud.com/img/image-20260717180527883.png)
+
+![img](https://zssnp-1301606049.cos.ap-nanjing.myqcloud.com/img/image-20260715140930749.png)
+
+![img](https://zssnp-1301606049.cos.ap-nanjing.myqcloud.com/img/image-20260715140908177.png)
+
+![img](https://zssnp-1301606049.cos.ap-nanjing.myqcloud.com/img/image-20260715140844479.png)
+
+![img](https://zssnp-1301606049.cos.ap-nanjing.myqcloud.com/img/image-20260715141024448.png)
+
+![img](https://zssnp-1301606049.cos.ap-nanjing.myqcloud.com/img/image-20260712200100407.png)
+
+![img](https://zssnp-1301606049.cos.ap-nanjing.myqcloud.com/img/image-20260712200121041.png)
+
+![img](https://zssnp-1301606049.cos.ap-nanjing.myqcloud.com/img/image-20260712200225786.png)
+
+![img](https://zssnp-1301606049.cos.ap-nanjing.myqcloud.com/img/image-20260712200240311.png)
+
+![img](https://zssnp-1301606049.cos.ap-nanjing.myqcloud.com/img/image-20260712200315783.png)
+
+![img](https://zssnp-1301606049.cos.ap-nanjing.myqcloud.com/img/image-20260713113230127.png)
+
+### **手机端显示：**
+
+![img](https://zssnp-1301606049.cos.ap-nanjing.myqcloud.com/img/20260706133816_392_8.png)
+
+![img](https://zssnp-1301606049.cos.ap-nanjing.myqcloud.com/img/20260706134321_396_81.png)
+
+### 钉钉和终端对接
+
+![img](https://zssnp-1301606049.cos.ap-nanjing.myqcloud.com/img/image-20260713113130681.png)
+
+![img](https://zssnp-1301606049.cos.ap-nanjing.myqcloud.com/img/image-20260713113029751.png)
+
+
+## 安全说明
+
+首次启动将自动生成访问 Token：
+
+```
+storage/.tongling_web_token
+```
+
+访问地址：
+
+```
+http://IP:15038/tongling/?token=xxxx
+```
+
+> ⚠️ 请勿将 Token、API Key、NPS vkey 提交至公开仓库。
+
+## 📂 目录结构
+
+```
+ web-standalone/
+ ├── start-web.cmd              # Windows 一键启动
+ ├── install-deps.cmd           # Windows 依赖安装
+ ├── tongling_hexstrike_launcher.py   # 主启动入口
+ ├── claude_hexstrike_bridge.py       # Claude ↔ HexStrike 桥接
+ ├── requirements-web.txt       # Web 最小依赖
+ ├── tongling_web/              # Web 门户（页面、API、IM 桥接）
+ ├── cc_visual/                 # Claude 终端与会话
+ └── storage/
+     ├── hexstrike-ai-community-edition-master/   # HexStrike CE（已内置）
+     ├── nuclei/nuclei-templates/                 # 漏洞库 Nuclei 模板（已内置）
+     ├── afrog-pocs/                              # 漏洞库 Afrog POC（已内置）
+     ├── im_bridge/             # 社交接入配置（运行时生成）
+     └── logs/                  # 运行日志
+```
 
 ## 📚工具界面
 
@@ -187,40 +258,6 @@
 ![img](https://zssnp-1301606049.cos.ap-nanjing.myqcloud.com/img/image-20260713113029751.png)
 
 
-##  安全说明
-
-首次启动将自动生成访问 Token：
-
-```
-storage/.tongling_web_token
-```
-
-访问地址：
-
-```
-http://IP:15038/tongling/?token=xxxx
-```
-
-> ⚠️ 请勿将 Token、API Key、NPS vkey 提交至公开仓库。
-
-## 📂 目录结构
-
-```
- web-standalone/
- ├── start-web.cmd              # Windows 一键启动
- ├── install-deps.cmd           # Windows 依赖安装
- ├── tongling_hexstrike_launcher.py   # 主启动入口
- ├── claude_hexstrike_bridge.py       # Claude ↔ HexStrike 桥接
- ├── requirements-web.txt       # Web 最小依赖
- ├── tongling_web/              # Web 门户（页面、API、IM 桥接）
- ├── cc_visual/                 # Claude 终端与会话
- └── storage/
-     ├── hexstrike-ai-community-edition-master/   # HexStrike CE（已内置）
-     ├── nuclei/nuclei-templates/                 # 漏洞库 Nuclei 模板（已内置）
-     ├── afrog-pocs/                              # 漏洞库 Afrog POC（已内置）
-     ├── im_bridge/             # 社交接入配置（运行时生成）
-     └── logs/                  # 运行日志
-```
 
 ## 🔗 相关上游项目
 

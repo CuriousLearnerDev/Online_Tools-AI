@@ -1,0 +1,24 @@
+# Claude Code
+.claude/worktrees
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+.venv/
+venv/
+
+# Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Generated
+_site/
+
+# OS
+.DS_Store
+Thumbs.db
